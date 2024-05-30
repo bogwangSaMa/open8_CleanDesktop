@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using static System.Net.Mime.MediaTypeNames;
@@ -19,6 +20,9 @@ namespace UEP
         private Button btnProcessRefresh;
         private ComboBox comboBox;
 
+        private TabControl tabControl1;
+        private TabPage tabPage1;
+
         //private int rowIndexFromMouseDown;
         //private int rowIndexOfItemUnderMouseToDrop;
 
@@ -28,8 +32,10 @@ namespace UEP
         {
             InitializeComponent();
             InitializeComponents();
+
             this.Size = new Size(1200, 1200);
             this.StartPosition = FormStartPosition.CenterScreen;
+
             this.AutoScaleMode = AutoScaleMode.Font; // 폰트크기 자동조절이라는데 되는건지 모르겠다
             this.Resize += new EventHandler(Form1_Resize); // 폰트 크기 조절용
         }
@@ -43,43 +49,43 @@ namespace UEP
             this.dataGridView1 = new DataGridView();
             this.dataGridView2 = new DataGridView();
 
+            // 탭 컨트롤 생성
+            tabControl1 = new TabControl();
+
+            // 탭 컨트롤의 위치 및 크기 설정
+            tabControl1.Location = new Point(30, 500); // 위치
+            tabControl1.Size = new Size(1100, 300); // 크기
+
+            // 탭 컨트롤을 폼에 추가
+            this.Controls.Add(tabControl1);
+
+            // 탭 페이지 추가
+            TabPage tabPage1 = new TabPage("SoftWare");
+            TabPage tabPage2 = new TabPage("Mouse");
+            TabPage tabPage3 = new TabPage("Display");
+            TabPage tabPage4 = new TabPage("Sound");
+
+            tabControl1.Controls.Add(tabPage1);
+            tabControl1.Controls.Add(tabPage2);
+            tabControl1.Controls.Add(tabPage3);
+            tabControl1.Controls.Add(tabPage4);
+
+            // 그리드뷰2를 첫 번째 탭 페이지에 추가
+            tabPage1.Controls.Add(dataGridView2);
+
             // DataGridView 설정
             this.dataGridView1.Location = new Point(30, 30);
             this.dataGridView1.Size = new Size(1100, 300);
-
-            this.dataGridView2.Location = new Point(30, 500);
-            this.dataGridView2.Size = new Size(1100, 300);
-
             this.dataGridView1.AllowUserToAddRows = false;
             this.dataGridView1.AllowUserToDeleteRows = false;
             this.dataGridView1.AllowUserToResizeColumns = true;
             this.dataGridView1.RowHeadersVisible = false;
 
+            this.dataGridView2.Size = new Size(1100, 300);
             this.dataGridView2.AllowUserToAddRows = false;
             this.dataGridView2.AllowUserToDeleteRows = false;
             this.dataGridView2.AllowUserToResizeColumns = true;
             this.dataGridView2.RowHeadersVisible = false;
-
-            //this.dataGridView2.AllowDrop = true;
-            //this.dataGridView2.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            //this.dataGridView2.TabIndex = 0;
-            //this.dataGridView2.MouseDown += new MouseEventHandler(this.dataGridView2_MouseDown);
-            //this.dataGridView2.MouseMove += new MouseEventHandler(this.dataGridView2_MouseMove);
-            //this.dataGridView2.DragOver += new DragEventHandler(this.dataGridView2_DragOver);
-            //this.dataGridView2.DragDrop += new DragEventHandler(this.dataGridView2_DragDrop);
-
-            //// 
-            //// Form1
-            //// 
-            //this.AutoScaleDimensions = new SizeF(6F, 13F);
-            //this.AutoScaleMode = AutoScaleMode.Font;
-            //this.ClientSize = new Size(800, 450);
-            //this.Controls.Add(this.dataGridView1);
-            //this.Name = "Form1";
-            //this.Text = "Form1";
-            //((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
-            //this.ResumeLayout(false);
-
 
 
             // 컬럼 추가 및 초기 너비 설정
@@ -104,7 +110,8 @@ namespace UEP
 
             // 폼에 DataGridView 추가
             this.Controls.Add(this.dataGridView1);
-            this.Controls.Add(this.dataGridView2);
+
+            
 
             // 프로세스 로드 (예시: 데이터를 직접 추가)
             LoadProcesses();
@@ -123,16 +130,12 @@ namespace UEP
             btnSavePath.Text = "Save"; // 버튼 텍스트 설정
             btnSavePath.Click += new EventHandler(btnSavePath_Click); // 클릭 이벤트 핸들러 연결
 
-
-
             // 프로세스목록을 새로고침하는 버튼
             btnProcessRefresh = new Button();
             btnProcessRefresh.Location = new System.Drawing.Point(800, 350); // 위치 설정
             btnProcessRefresh.Size = new System.Drawing.Size(80, 40); // 크기 설정
             btnProcessRefresh.Text = "리로드"; // 버튼 텍스트 설정
             btnProcessRefresh.Click += new EventHandler(btnProcessRefresh_Click); // 클릭 이벤트 핸들러 연결
-
-
 
             // 버튼 설정
             btnRunPath = new Button();
@@ -156,49 +159,9 @@ namespace UEP
             this.Controls.Add(btnRunPath);
             this.Controls.Add(comboBox);
             this.Controls.Add(btnProcessRefresh);
-
-
         }
 
-        //private void dataGridView2_MouseDown(object sender, MouseEventArgs e)
-        //{
-        //    rowIndexFromMouseDown = dataGridView1.HitTest(e.X, e.Y).RowIndex;
 
-        //    if (rowIndexFromMouseDown != -1)
-        //    {
-        //        dataGridView1.DoDragDrop(dataGridView1.Rows[rowIndexFromMouseDown], DragDropEffects.Move);
-        //    }
-        //}
-
-        //private void dataGridView2_MouseMove(object sender, MouseEventArgs e)
-        //{
-        //    if ((e.Button & MouseButtons.Left) == MouseButtons.Left)
-        //    {
-        //        // Drag the row if the left mouse button is pressed
-        //        if (rowIndexFromMouseDown != -1)
-        //        {
-        //            DragDropEffects dropEffect = dataGridView1.DoDragDrop(dataGridView1.Rows[rowIndexFromMouseDown], DragDropEffects.Move);
-        //        }
-        //    }
-        //}
-
-        //private void dataGridView2_DragOver(object sender, DragEventArgs e)
-        //{
-        //    e.Effect = DragDropEffects.Move;
-
-        //    Point clientPoint = dataGridView1.PointToClient(new Point(e.X, e.Y));
-        //    rowIndexOfItemUnderMouseToDrop = dataGridView1.HitTest(clientPoint.X, clientPoint.Y).RowIndex;
-        //}
-
-        //private void dataGridView2_DragDrop(object sender, DragEventArgs e)
-        //{
-        //    if (rowIndexOfItemUnderMouseToDrop != -1 && rowIndexFromMouseDown != -1)
-        //    {
-        //        DataGridViewRow rowToMove = e.Data.GetData(typeof(DataGridViewRow)) as DataGridViewRow;
-        //        dataGridView1.Rows.RemoveAt(rowIndexFromMouseDown);
-        //        dataGridView1.Rows.Insert(rowIndexOfItemUnderMouseToDrop, rowToMove);
-        //    }
-        //}
 
         private void AddColumn(string name, int initialWidth, int num)
         {
@@ -244,7 +207,7 @@ namespace UEP
         {
             foreach (Control c in ctrl.Controls)
             {
-                c.Font = new Font(c.Font.FontFamily, 10 * scaleFactor, c.Font.Style);
+                c.Font = new System.Drawing.Font(c.Font.FontFamily, 10 * scaleFactor, c.Font.Style);
                 if (c.Controls.Count > 0)
                 {
                     AdjustControlFonts(c, scaleFactor);

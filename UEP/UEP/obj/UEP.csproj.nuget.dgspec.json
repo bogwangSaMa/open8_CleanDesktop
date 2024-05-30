@@ -1,32 +1,35 @@
 {
   "format": 1,
   "restore": {
-    "C:\\PROJECT\\UserExperiencePreset\\UEP\\UEP\\UEP.csproj": {}
+    "C:\\ALLFILE\\PROJECT\\UserExperiencePreset\\UEP\\UEP\\UEP.csproj": {}
   },
   "projects": {
-    "C:\\PROJECT\\UserExperiencePreset\\UEP\\UEP\\UEP.csproj": {
+    "C:\\ALLFILE\\PROJECT\\UserExperiencePreset\\UEP\\UEP\\UEP.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\PROJECT\\UserExperiencePreset\\UEP\\UEP\\UEP.csproj",
+        "projectUniqueName": "C:\\ALLFILE\\PROJECT\\UserExperiencePreset\\UEP\\UEP\\UEP.csproj",
         "projectName": "UEP",
-        "projectPath": "C:\\PROJECT\\UserExperiencePreset\\UEP\\UEP\\UEP.csproj",
+        "projectPath": "C:\\ALLFILE\\PROJECT\\UserExperiencePreset\\UEP\\UEP\\UEP.csproj",
         "packagesPath": "C:\\Users\\qhrhk\\.nuget\\packages\\",
-        "outputPath": "C:\\PROJECT\\UserExperiencePreset\\UEP\\UEP\\obj\\",
+        "outputPath": "C:\\ALLFILE\\PROJECT\\UserExperiencePreset\\UEP\\UEP\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
           "C:\\Users\\qhrhk\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
-          "net7.0-windows"
+          "net8.0-windows7.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "https://api.nuget.org/v3/index.json": {}
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {}
         },
         "frameworks": {
-          "net7.0-windows7.0": {
-            "targetAlias": "net7.0-windows",
+          "net8.0-windows7.0": {
+            "targetAlias": "net8.0-windows7.0",
             "projectReferences": {}
           }
         },
@@ -34,11 +37,16 @@
           "warnAsError": [
             "NU1605"
           ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
         }
       },
       "frameworks": {
-        "net7.0-windows7.0": {
-          "targetAlias": "net7.0-windows",
+        "net8.0-windows7.0": {
+          "targetAlias": "net8.0-windows7.0",
           "imports": [
             "net461",
             "net462",
@@ -58,7 +66,7 @@
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.201\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.300/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
