@@ -16,7 +16,11 @@ namespace UEP
         private TextBox txtProcessName;
         private Button btnSavePath;
         private Button btnRunPath;
+        private Button btnProcessRefresh;
         private ComboBox comboBox;
+
+        //private int rowIndexFromMouseDown;
+        //private int rowIndexOfItemUnderMouseToDrop;
 
         private string selectFile;
 
@@ -55,6 +59,28 @@ namespace UEP
             this.dataGridView2.AllowUserToDeleteRows = false;
             this.dataGridView2.AllowUserToResizeColumns = true;
             this.dataGridView2.RowHeadersVisible = false;
+
+            //this.dataGridView2.AllowDrop = true;
+            //this.dataGridView2.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            //this.dataGridView2.TabIndex = 0;
+            //this.dataGridView2.MouseDown += new MouseEventHandler(this.dataGridView2_MouseDown);
+            //this.dataGridView2.MouseMove += new MouseEventHandler(this.dataGridView2_MouseMove);
+            //this.dataGridView2.DragOver += new DragEventHandler(this.dataGridView2_DragOver);
+            //this.dataGridView2.DragDrop += new DragEventHandler(this.dataGridView2_DragDrop);
+
+            //// 
+            //// Form1
+            //// 
+            //this.AutoScaleDimensions = new SizeF(6F, 13F);
+            //this.AutoScaleMode = AutoScaleMode.Font;
+            //this.ClientSize = new Size(800, 450);
+            //this.Controls.Add(this.dataGridView1);
+            //this.Name = "Form1";
+            //this.Text = "Form1";
+            //((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
+            //this.ResumeLayout(false);
+
+
 
             // 컬럼 추가 및 초기 너비 설정
             AddImageColumn(".", 60, 1); // 이미지 컬럼 추가
@@ -97,6 +123,17 @@ namespace UEP
             btnSavePath.Text = "Save"; // 버튼 텍스트 설정
             btnSavePath.Click += new EventHandler(btnSavePath_Click); // 클릭 이벤트 핸들러 연결
 
+
+
+            // 프로세스목록을 새로고침하는 버튼
+            btnProcessRefresh = new Button();
+            btnProcessRefresh.Location = new System.Drawing.Point(800, 350); // 위치 설정
+            btnProcessRefresh.Size = new System.Drawing.Size(80, 40); // 크기 설정
+            btnProcessRefresh.Text = "리로드"; // 버튼 텍스트 설정
+            btnProcessRefresh.Click += new EventHandler(btnProcessRefresh_Click); // 클릭 이벤트 핸들러 연결
+
+
+
             // 버튼 설정
             btnRunPath = new Button();
             btnRunPath.Location = new System.Drawing.Point(240, 450); // 위치 설정
@@ -118,10 +155,50 @@ namespace UEP
             this.Controls.Add(btnSavePath);
             this.Controls.Add(btnRunPath);
             this.Controls.Add(comboBox);
-
+            this.Controls.Add(btnProcessRefresh);
 
 
         }
+
+        //private void dataGridView2_MouseDown(object sender, MouseEventArgs e)
+        //{
+        //    rowIndexFromMouseDown = dataGridView1.HitTest(e.X, e.Y).RowIndex;
+
+        //    if (rowIndexFromMouseDown != -1)
+        //    {
+        //        dataGridView1.DoDragDrop(dataGridView1.Rows[rowIndexFromMouseDown], DragDropEffects.Move);
+        //    }
+        //}
+
+        //private void dataGridView2_MouseMove(object sender, MouseEventArgs e)
+        //{
+        //    if ((e.Button & MouseButtons.Left) == MouseButtons.Left)
+        //    {
+        //        // Drag the row if the left mouse button is pressed
+        //        if (rowIndexFromMouseDown != -1)
+        //        {
+        //            DragDropEffects dropEffect = dataGridView1.DoDragDrop(dataGridView1.Rows[rowIndexFromMouseDown], DragDropEffects.Move);
+        //        }
+        //    }
+        //}
+
+        //private void dataGridView2_DragOver(object sender, DragEventArgs e)
+        //{
+        //    e.Effect = DragDropEffects.Move;
+
+        //    Point clientPoint = dataGridView1.PointToClient(new Point(e.X, e.Y));
+        //    rowIndexOfItemUnderMouseToDrop = dataGridView1.HitTest(clientPoint.X, clientPoint.Y).RowIndex;
+        //}
+
+        //private void dataGridView2_DragDrop(object sender, DragEventArgs e)
+        //{
+        //    if (rowIndexOfItemUnderMouseToDrop != -1 && rowIndexFromMouseDown != -1)
+        //    {
+        //        DataGridViewRow rowToMove = e.Data.GetData(typeof(DataGridViewRow)) as DataGridViewRow;
+        //        dataGridView1.Rows.RemoveAt(rowIndexFromMouseDown);
+        //        dataGridView1.Rows.Insert(rowIndexOfItemUnderMouseToDrop, rowToMove);
+        //    }
+        //}
 
         private void AddColumn(string name, int initialWidth, int num)
         {
@@ -174,6 +251,14 @@ namespace UEP
                 }
             }
         }
+
+
+        private void btnProcessRefresh_Click(object sender, EventArgs e)
+        {
+            LoadProcesses();
+        }
+
+
         private void comboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (comboBox.SelectedIndex != -1) // 선택된 항목이 있는지 확인합니다.
