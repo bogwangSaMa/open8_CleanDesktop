@@ -1,0 +1,19 @@
+WindowTitle: , 경로: 접근 불가 - Unable to enumerate the process modules.
+WindowTitle: , 경로: 접근 불가 - Unable to enumerate the process modules.
+WindowTitle: , 경로: 접근 불가 - 액세스가 거부되었습니다.
+WindowTitle: , 경로: 접근 불가 - 액세스가 거부되었습니다.
+WindowTitle: , 경로: 접근 불가 - 액세스가 거부되었습니다.
+WindowTitle: , 경로: 접근 불가 - 액세스가 거부되었습니다.
+WindowTitle: , 경로: 접근 불가 - 액세스가 거부되었습니다.
+WindowTitle: , 경로: 접근 불가 - 액세스가 거부되었습니다.
+WindowTitle: , 경로: 접근 불가 - 액세스가 거부되었습니다.
+WindowTitle: , 경로: 접근 불가 - 잘못된 메모리 위치를 액세스하려고 했습니다.
+C:\Windows\system32\lsass.exe
+C:\Windows\ImmersiveControlPanel\SystemSettings.exe
+C:\Windows\ImmersiveControlPanel\SystemSettings.exe
+
+
+
+////explorer//0//1392//2560//48//Normal
+//설정//ApplicationFrameHost//818//336//1216//941//Normal
+//설정//SystemSettings//0//1//1200//932//Normal

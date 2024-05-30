@@ -1,0 +1,9 @@
+C:\Windows\ImmersiveControlPanel\SystemSettings.exe
+C:\Windows\ImmersiveControlPanel\SystemSettings.exe
+C:\Windows\SystemApps\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\TextInputHost.exe
+
+
+
+//설정//SystemSettings//0//1//1200//932//Normal
+//설정//ApplicationFrameHost//818//336//1216//941//Normal
+//Windows 입력 환경//TextInputHost//0//0//2560//1440//Normal

@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows.Forms;
 using static System.Net.Mime.MediaTypeNames;
 
@@ -44,7 +45,7 @@ namespace UEP
         private void InitializeComponents()
         {
             imageList1 = new ImageList();
-            imageList1.ImageSize = new Size(150, 150);  // 아이콘 크기 설정
+            imageList1.ImageSize = new Size(100, 100);  // 아이콘 크기 설정
 
             this.dataGridView1 = new DataGridView();
             this.dataGridView2 = new DataGridView();
@@ -111,7 +112,7 @@ namespace UEP
             // 폼에 DataGridView 추가
             this.Controls.Add(this.dataGridView1);
 
-            
+
 
             // 프로세스 로드 (예시: 데이터를 직접 추가)
             LoadProcesses();
@@ -120,34 +121,34 @@ namespace UEP
 
             // 텍스트 박스 설정
             txtProcessName = new TextBox();
-            txtProcessName.Location = new System.Drawing.Point(30, 350); // 위치 설정
-            txtProcessName.Size = new System.Drawing.Size(200, 20); // 크기 설정
+            txtProcessName.Location = new Point(30, 350); // 위치 설정
+            txtProcessName.Size = new Size(200, 20); // 크기 설정
 
             // 버튼 설정
             btnSavePath = new Button();
-            btnSavePath.Location = new System.Drawing.Point(240, 350); // 위치 설정
-            btnSavePath.Size = new System.Drawing.Size(80, 40); // 크기 설정
+            btnSavePath.Location = new Point(240, 350); // 위치 설정
+            btnSavePath.Size = new Size(80, 40); // 크기 설정
             btnSavePath.Text = "Save"; // 버튼 텍스트 설정
             btnSavePath.Click += new EventHandler(btnSavePath_Click); // 클릭 이벤트 핸들러 연결
 
             // 프로세스목록을 새로고침하는 버튼
             btnProcessRefresh = new Button();
-            btnProcessRefresh.Location = new System.Drawing.Point(800, 350); // 위치 설정
-            btnProcessRefresh.Size = new System.Drawing.Size(80, 40); // 크기 설정
+            btnProcessRefresh.Location = new Point(800, 350); // 위치 설정
+            btnProcessRefresh.Size = new Size(80, 40); // 크기 설정
             btnProcessRefresh.Text = "리로드"; // 버튼 텍스트 설정
             btnProcessRefresh.Click += new EventHandler(btnProcessRefresh_Click); // 클릭 이벤트 핸들러 연결
 
-            // 버튼 설정
+            // 버튼 설정            
             btnRunPath = new Button();
-            btnRunPath.Location = new System.Drawing.Point(240, 450); // 위치 설정
-            btnRunPath.Size = new System.Drawing.Size(80, 40); // 크기 설정
+            btnRunPath.Location = new Point(240, 450); // 위치 설정
+            btnRunPath.Size = new Size(80, 40); // 크기 설정
             btnRunPath.Text = "실행"; // 버튼 텍스트 설정
             btnRunPath.Click += new EventHandler(btnRunPath_Click); // 클릭 이벤트 핸들러 연결
 
             // 프리셋 목록 보여주기
             comboBox = new ComboBox();
-            comboBox.Location = new System.Drawing.Point(30, 450);
-            comboBox.Size = new System.Drawing.Size(200, 20);
+            comboBox.Location = new Point(30, 450);
+            comboBox.Size = new Size(200, 20);
             comboBox.Text = "프리셋 목록";
             comboBox.Click += new EventHandler(LoadTextFilesToComboBox);
             comboBox.SelectedIndexChanged += new EventHandler(comboBox_SelectedIndexChanged);
@@ -162,7 +163,7 @@ namespace UEP
         }
 
 
-
+        // 그리드뷰에 문자열 추가
         private void AddColumn(string name, int initialWidth, int num)
         {
             var column = new DataGridViewTextBoxColumn();
@@ -174,13 +175,16 @@ namespace UEP
             if (num == 1)
             {
                 this.dataGridView1.Columns.Add(column);
-            } else
+            }
+            else
             {
                 this.dataGridView2.Columns.Add(column);
             }
 
         }
 
+
+        // 그리드뷰에 이미지 추가
         private void AddImageColumn(string name, int initialWidth, int num)
         {
             var column = new DataGridViewImageColumn();
@@ -191,18 +195,23 @@ namespace UEP
             if (num == 1)
             {
                 this.dataGridView1.Columns.Add(column);
-            } else
+            }
+            else
             {
                 this.dataGridView2.Columns.Add(column);
             }
         }
 
+
+        // 폰트 관련 함수
         private void Form1_Resize(object sender, EventArgs e)
         {
             float scaleFactor = Math.Min((float)this.ClientSize.Width / 1800, (float)this.ClientSize.Height / 1600);
             AdjustControlFonts(this, scaleFactor);
         }
 
+
+        // 폰트 관련 함수
         private void AdjustControlFonts(Control ctrl, float scaleFactor)
         {
             foreach (Control c in ctrl.Controls)
@@ -216,12 +225,14 @@ namespace UEP
         }
 
 
+        // 프로세스를 새로고침 하는 버튼의 이벤트
         private void btnProcessRefresh_Click(object sender, EventArgs e)
         {
             LoadProcesses();
         }
 
 
+        // 콤보박스의 메뉴를 선택했을 경우, 경로를 찾고 텍스트파일을 읽어서 프로세스 저장 정보를 가져온다
         private void comboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (comboBox.SelectedIndex != -1) // 선택된 항목이 있는지 확인합니다.
@@ -233,8 +244,8 @@ namespace UEP
                 string modifiedFile = selectedFile.Substring(0, selectedFile.Length - 4);
 
                 string exeLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
-                string exeDirectory = System.IO.Path.GetDirectoryName(exeLocation);
-                string filePath = System.IO.Path.Combine(exeDirectory, modifiedFile + "\\" + selectedFile);
+                string exeDirectory = Path.GetDirectoryName(exeLocation);
+                string filePath = Path.Combine(exeDirectory, modifiedFile + "\\" + selectedFile);
                 Console.WriteLine(filePath);
 
                 selectFile = filePath;
@@ -247,7 +258,8 @@ namespace UEP
                     if (string.IsNullOrWhiteSpace(line))
                     {
                         blankLineCount++; // 공백 행이면 카운트를 증가시킵니다.
-                    } else if (blankLineCount >= 3)
+                    }
+                    else if (blankLineCount >= 3)
                     {
                         processInfoLines.Add(line); // 3개의 공백 행 이후의 데이터를 리스트에 추가합니다.
                     }
@@ -262,14 +274,14 @@ namespace UEP
             }
         }
 
+
+        // 콤보박스의 메뉴를 선택했을 경우, 그리드뷰2에 프로세스 정보를 업로드한다
         private void DisplayProcessInfoInGridView(List<string> processInfoLines, string modifiedFile)
         {
             dataGridView2.Rows.Clear(); // 기존의 내용을 지우고 새 정보를 표시합니다.
             int imageNum = 0;
             foreach (string line in processInfoLines)
             {
-
-
                 // line 변수에 저장된 텍스트를 "//" 기준으로 분할
                 string[] data = line.Split(new string[] { "//" }, StringSplitOptions.None);
 
@@ -281,9 +293,9 @@ namespace UEP
                 // 현재 실행 중인 어셈블리의 위치를 얻음
                 string exeLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
                 // 어셈블리의 디렉터리를 얻음
-                string exeDirectory = System.IO.Path.GetDirectoryName(exeLocation);
+                string exeDirectory = Path.GetDirectoryName(exeLocation);
                 // 이미지 파일의 상대 경로를 추가하여 전체 경로를 구성
-                string imagePath = System.IO.Path.Combine(exeDirectory, modifiedFile, imageNum.ToString() + ".png"); //]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]이렇게 하면 실행파일 있는곳의 경로 가질수있음
+                string imagePath = Path.Combine(exeDirectory, modifiedFile, imageNum.ToString() + ".png");
                 imageNum++;
 
                 // 이미지 파일을 로드
@@ -309,8 +321,7 @@ namespace UEP
         }
 
 
-
-        // 콤보박스에 지정 디렉토리에 있는 모든 텍스트 파일 가져오는 함수
+        // 콤보박스에 지정 디렉토리에 있는 모든 텍스트 파일을 가져오는 함수
         private void LoadTextFilesToComboBox(object sender, EventArgs e)
         {
             comboBox.Items.Clear(); // 기존 목록을 비웁니다.
@@ -318,9 +329,9 @@ namespace UEP
             // 현재 실행 중인 어셈블리의 위치를 얻음
             string exeLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
             // 어셈블리의 디렉터리를 얻음
-            string exeDirectory = System.IO.Path.GetDirectoryName(exeLocation);
+            string exeDirectory = Path.GetDirectoryName(exeLocation);
             // 이미지 파일의 상대 경로를 추가하여 전체 경로를 구성
-            string directoryPath = System.IO.Path.Combine(exeDirectory);
+            string directoryPath = Path.Combine(exeDirectory);
 
 
             // "[FILE]"로 시작하는 모든 폴더를 가져옵니다.
@@ -338,7 +349,6 @@ namespace UEP
                 }
             }
         }
-
 
 
         // 그리드뷰2의 프로세스 실행파일 정보를 텍스트 파일에 저장하는 함수
@@ -368,7 +378,8 @@ namespace UEP
                                     // 실행 파일 경로를 파일에 씁니다.
                                     sw.WriteLine($"{processPath}");
                                     break; // 일치하는 첫 번째 프로세스를 찾았으므로 반복을 중단합니다.
-                                } catch (Exception ex)
+                                }
+                                catch (Exception ex)
                                 {
                                     // 접근할 수 없는 프로세스는 "접근 불가"로 표시합니다.
                                     sw.WriteLine($"WindowTitle: {windowTitle}, 경로: 접근 불가 - {ex.Message}");
@@ -421,7 +432,8 @@ namespace UEP
                     img.Save(imagePath, ImageFormat.Png); // ImageFormat에 따라 다른 형식으로 저장할 수 있습니다.
 
                     imageIndex++; // 다음 이미지에 대한 인덱스를 증가시킵니다.
-                } else
+                }
+                else
                 {
                     // 적절한 예외 처리나 기본값 반환
                 }
@@ -471,7 +483,8 @@ namespace UEP
                     if (string.IsNullOrWhiteSpace(appPath))
                     {
                         blankLineCount++;
-                    } else
+                    }
+                    else
                     {
                         // 공백이 아닌 행을 찾으면 공백 행 카운트를 초기화
                         blankLineCount = 0;
@@ -497,7 +510,8 @@ namespace UEP
                         Process.Start(psi);
                     }
                 }
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 // 오류 처리
                 Console.WriteLine($"An error occurred: {ex.Message}");
@@ -578,76 +592,327 @@ namespace UEP
             return "Error";
         }
 
+        // 필요한 외부 함수 선언
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool IsWindowVisible(IntPtr hWnd);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern int GetWindowThreadProcessId(IntPtr hWnd, out int lpdwProcessId);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool GetWindowPlacement(IntPtr hWnd, out WINDOWPLACEMENT lpwndpl);
+
+        private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+        // P/Invoke 선언
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool QueryFullProcessImageName([In] IntPtr hProcess, [In] uint dwFlags, [Out] StringBuilder lpExeName, ref uint lpdwSize);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern IntPtr OpenProcess(uint processAccess, bool bInheritHandle, uint processId);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool CloseHandle(IntPtr hObject);
+
+        [DllImport("Shell32.dll", SetLastError = true)]
+        static extern int ExtractIconEx(string sFile, int iIndex, out IntPtr piLargeVersion, out IntPtr piSmallVersion, int amountIcons);
+
+        const uint PROCESS_QUERY_INFORMATION = 0x0400;
+        const uint PROCESS_VM_READ = 0x0010;
+
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern bool DestroyIcon(IntPtr hIcon);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RECT
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct POINT
+        {
+            public int X;
+            public int Y;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct WINDOWPLACEMENT
+        {
+            public int Length;
+            public int Flags;
+            public int ShowCmd;
+            public POINT MinPosition;
+            public POINT MaxPosition;
+            public RECT NormalPosition;
+        }
+
+        private void SaveIconFromWindow(IntPtr hWnd, string windowTitle)
+        {
+            uint processId;
+            GetWindowThreadProcessId(hWnd, out processId);
+
+            IntPtr processHandle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, false, processId);
+
+            if (processHandle != IntPtr.Zero)
+            {
+                StringBuilder buffer = new StringBuilder(1024);
+                uint bufferSize = (uint)buffer.Capacity + 1; // 버퍼 크기 수정
+                if (QueryFullProcessImageName(processHandle, 0, buffer, ref bufferSize))
+                {
+                    string processPath = buffer.ToString();
+                    ExtractAndAddIconToImageList(processPath, windowTitle);
+                }
+
+                CloseHandle(processHandle);
+            }
+        }
+
+        private void ExtractAndAddIconToImageList(string filePath, string windowTitle)
+        {
+            IntPtr largeIcon, smallIcon;
+            if (ExtractIconEx(filePath, 0, out largeIcon, out smallIcon, 1) > 0)
+            {
+                using (Icon icon = Icon.FromHandle(largeIcon))
+                {
+                    // Icon을 ImageList에 추가
+                    imageList1.Images.Add(icon.ToBitmap());
+                    // 선택적으로, windowTitle을 사용하여 각 이미지에 키를 할당할 수 있습니다.
+                    // 예: imageList.Images.Add(windowTitle, icon.ToBitmap());
+
+                    Console.WriteLine($"Icon added to ImageList: {windowTitle}");
+                }
+
+                // 아이콘 핸들 정리
+                if (largeIcon != IntPtr.Zero) DestroyIcon(largeIcon);
+                if (smallIcon != IntPtr.Zero) DestroyIcon(smallIcon);
+            }
+        }
 
 
+        private bool EnumWindowsCallback(IntPtr hWnd, IntPtr lParam)
+        {
+
+            if (IsWindowVisible(hWnd))
+            {
+                
+                
+                StringBuilder sb = new StringBuilder(256);
+                if (GetWindowText(hWnd, sb, sb.Capacity) > 0)
+                {
+                    
+
+                    RECT rect;
+                    GetWindowRect(hWnd, out rect);
+
+                    WINDOWPLACEMENT placement = new WINDOWPLACEMENT();
+                    placement.Length = Marshal.SizeOf(placement);
+                    GetWindowPlacement(hWnd, out placement);
+
+                    string windowState = placement.ShowCmd switch
+                    {
+                        1 => "Normal",
+                        2 => "Minimized",
+                        3 => "Maximized",
+                        _ => "Unknown"
+                    };
+
+                    // 프로세스 ID 가져오기
+                    GetWindowThreadProcessId(hWnd, out int processId);
+
+                    // 프로세스 이름 가져오기
+                    string processName = "Unknown";
+                    try
+                    {
+                        Process process = Process.GetProcessById(processId);
+                        processName = process.ProcessName;
+
+                    }
+                    catch (Exception ex)
+                    {
+                        processName = $"Error: {ex.Message}";
+                    }
+
+                    SaveIconFromWindow(hWnd, processName);
+
+                    var row = new DataGridViewRow();
+                    row.CreateCells(dataGridView1);
+
+                    int imageIndex;
+                    imageIndex = imageList1.Images.Count - 1;
+                    row.Cells[0].Value = imageList1.Images[imageIndex];
+                    row.Cells[1].Value = sb;
+                    row.Cells[2].Value = processName;
+                    row.Cells[3].Value = rect.Left;
+                    row.Cells[4].Value = rect.Top;
+                    row.Cells[5].Value = rect.Right - rect.Left;
+                    row.Cells[6].Value = rect.Bottom - rect.Top;
+                    row.Cells[7].Value = windowState;
+
+                    dataGridView1.Rows.Add(row);
+
+                    Console.WriteLine($"Handle: {hWnd}, Title: {sb}, Process Name: {processName}, X: {rect.Left}, Y: {rect.Top}, Width: {rect.Right - rect.Left}, Height: {rect.Bottom - rect.Top}, State: {windowState}");
+                }
+            }
+            return true; // Return true to continue enumerating the next window
+        }
 
 
         private void LoadProcesses()
         {
             dataGridView1.Rows.Clear(); // DataGridView 내용을 클리어
-            Process[] processes = Process.GetProcesses();
-            foreach (Process prs in processes)
-            {
-                // MainWindowTitle이 비어있지 않은 프로세스만 필터링
-                if (!string.IsNullOrEmpty(prs.MainWindowTitle))
-                {
-                    int imageIndex;
-
-                    try
-                    {
-                        // 프로세스의 메인 모듈로부터 아이콘 추출 시도
-                        Icon icon = Icon.ExtractAssociatedIcon(prs.MainModule.FileName);
-                        // Icon을 Image 형태로 변환
-                        Bitmap iconBitmap = icon.ToBitmap();
-                        imageList1.Images.Add(iconBitmap); // ImageList에 아이콘 추가
-                        imageIndex = imageList1.Images.Count - 1; // 추가된 아이콘의 인덱스
-
-                    } catch (Exception ex)
-                    {
-                        // 추출 실패 시 기본 Error 아이콘 사용
-                        imageList1.Images.Add(SystemIcons.Error);
-                        imageIndex = imageList1.Images.Count - 1; // 추가된 Error 아이콘의 인덱스
-
-                    }
-
-                    // 데이터 그리드뷰에 행 추가
-                    var row = new DataGridViewRow();
-                    row.CreateCells(dataGridView1);
-
-                    // 아이콘을 이미지 셀에 추가
-                    row.Cells[0].Value = imageList1.Images[imageIndex];
-
-                    // 프로세스 이름과 아이콘 추가
-                    row.Cells[1].Value = prs.MainWindowTitle;
-                    row.Cells[2].Value = prs.ProcessName;
-
-                    // 윈도우 상태 정보 추가
-                    string windowState = GetWindowState(prs.MainWindowHandle);
-                    row.Cells[7].Value = windowState;
-
-
-
-                    // 윈도우 위치 및 크기 정보 추가
-                    try
-                    {
-                        var rect = new User32.Rect();
-                        User32.GetWindowRect(prs.MainWindowHandle, ref rect);
-                        row.Cells[3].Value = rect.Left.ToString(); // X축 위치
-                        row.Cells[4].Value = rect.Top.ToString(); // Y축 위치
-                        row.Cells[5].Value = (rect.Right - rect.Left).ToString(); // 가로 크기
-                        row.Cells[6].Value = (rect.Bottom - rect.Top).ToString(); // 세로 크기
-                    } catch
-                    {
-                        row.Cells[3].Value = "N/A"; // X축 위치
-                        row.Cells[4].Value = "N/A"; // Y축 위치
-                        row.Cells[5].Value = "N/A"; // 가로 크기
-                        row.Cells[6].Value = "N/A"; // 세로 크기
-                    }
-                    dataGridView1.Rows.Add(row);
-                }
-            }
+            EnumWindows(new EnumWindowsProc(EnumWindowsCallback), IntPtr.Zero);
         }
+
+
+        //private void LoadProcesses()
+        //{
+
+        //    EnumWindows(new EnumWindowsProc(EnumWindowsCallback), IntPtr.Zero);
+
+
+        //    dataGridView1.Rows.Clear(); // DataGridView 내용을 클리어
+        //    Process[] processes = Process.GetProcesses();
+        //    foreach (Process prs in processes)
+        //    {
+        //        // MainWindowTitle이 비어있지 않은 프로세스만 필터링
+        //        if (!string.IsNullOrEmpty(prs.MainWindowTitle))
+        //        {
+        //            int imageIndex;
+
+
+        //            try
+        //            {
+        //                // 프로세스의 메인 모듈로부터 아이콘 추출 시도
+        //                Icon icon = Icon.ExtractAssociatedIcon(prs.MainModule.FileName);
+        //                // Icon을 Image 형태로 변환
+        //                Bitmap iconBitmap = icon.ToBitmap();
+        //                imageList1.Images.Add(iconBitmap); // ImageList에 아이콘 추가
+        //                imageIndex = imageList1.Images.Count - 1; // 추가된 아이콘의 인덱스
+
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                // 추출 실패 시 기본 Error 아이콘 사용
+        //                imageList1.Images.Add(SystemIcons.Error);
+        //                imageIndex = imageList1.Images.Count - 1; // 추가된 Error 아이콘의 인덱스
+
+        //            }
+
+        //            // 데이터 그리드뷰에 행 추가
+        //            var row = new DataGridViewRow();
+        //            row.CreateCells(dataGridView1);
+
+        //            // 아이콘을 이미지 셀에 추가
+        //            row.Cells[0].Value = imageList1.Images[imageIndex];
+
+        //            // 프로세스 이름과 아이콘 추가
+        //            row.Cells[1].Value = prs.MainWindowTitle;
+        //            row.Cells[2].Value = prs.ProcessName;
+
+        //            // 윈도우 상태 정보 추가
+        //            string windowState = GetWindowState(prs.MainWindowHandle);
+        //            row.Cells[7].Value = windowState;
+
+
+
+        //            // 윈도우 위치 및 크기 정보 추가
+        //            try
+        //            {
+        //                var rect = new User32.Rect();
+        //                User32.GetWindowRect(prs.MainWindowHandle, ref rect);
+        //                row.Cells[3].Value = rect.Left.ToString(); // X축 위치
+        //                row.Cells[4].Value = rect.Top.ToString(); // Y축 위치
+        //                row.Cells[5].Value = (rect.Right - rect.Left).ToString(); // 가로 크기
+        //                row.Cells[6].Value = (rect.Bottom - rect.Top).ToString(); // 세로 크기
+        //            }
+        //            catch
+        //            {
+        //                row.Cells[3].Value = "N/A"; // X축 위치
+        //                row.Cells[4].Value = "N/A"; // Y축 위치
+        //                row.Cells[5].Value = "N/A"; // 가로 크기
+        //                row.Cells[6].Value = "N/A"; // 세로 크기
+        //            }
+        //            dataGridView1.Rows.Add(row);
+        //        }
+        //    }
+        //}
+
+
+
+        //    private static bool EnumWindowsCallback(IntPtr hWnd, IntPtr lParam)
+        //    {
+        //        if (IsWindowVisible(hWnd))
+        //        {
+        //            StringBuilder sb = new StringBuilder(256);
+        //            if (GetWindowText(hWnd, sb, sb.Capacity) > 0)
+        //            {
+        //                RECT rect;
+        //                GetWindowRect(hWnd, out rect);
+
+        //                WINDOWPLACEMENT placement = new WINDOWPLACEMENT();
+        //                placement.Length = Marshal.SizeOf(placement);
+        //                GetWindowPlacement(hWnd, out placement);
+
+        //                string windowState = placement.ShowCmd switch
+        //                {
+        //                    1 => "Normal",
+        //                    2 => "Minimized",
+        //                    3 => "Maximized",
+        //                    _ => "Unknown"
+        //                };
+
+        //                // 프로세스 ID 가져오기
+        //                GetWindowThreadProcessId(hWnd, out int processId);
+
+        //                // 프로세스 이름 가져오기
+        //                string processName = "Unknown";
+        //                try
+        //                {
+        //                    Process process = Process.GetProcessById(processId);
+        //                    processName = process.ProcessName;
+        //                }
+        //                catch (Exception ex)
+        //                {
+        //                    processName = $"Error: {ex.Message}";
+        //                }
+
+        //                Console.WriteLine($"Handle: {hWnd}, Title: {sb}, Process Name: {processName}, X: {rect.Left}, Y: {rect.Top}, Width: {rect.Right - rect.Left}, Height: {rect.Bottom - rect.Top}, State: {windowState}");
+        //            }
+        //        }
+        //        return true; // Return true to continue enumerating the next window
+        //    }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
