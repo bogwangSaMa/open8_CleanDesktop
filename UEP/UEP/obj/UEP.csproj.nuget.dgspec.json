@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\ALLFILE\\PROJECT\\UserExperiencePreset\\UEP\\UEP\\UEP.csproj": {}
+    "C:\\Users\\dowon\\Desktop\\open9_UserExperiencePreset-master\\UEP\\UEP\\UEP.csproj": {}
   },
   "projects": {
-    "C:\\ALLFILE\\PROJECT\\UserExperiencePreset\\UEP\\UEP\\UEP.csproj": {
+    "C:\\Users\\dowon\\Desktop\\open9_UserExperiencePreset-master\\UEP\\UEP\\UEP.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\ALLFILE\\PROJECT\\UserExperiencePreset\\UEP\\UEP\\UEP.csproj",
+        "projectUniqueName": "C:\\Users\\dowon\\Desktop\\open9_UserExperiencePreset-master\\UEP\\UEP\\UEP.csproj",
         "projectName": "UEP",
-        "projectPath": "C:\\ALLFILE\\PROJECT\\UserExperiencePreset\\UEP\\UEP\\UEP.csproj",
-        "packagesPath": "C:\\Users\\qhrhk\\.nuget\\packages\\",
-        "outputPath": "C:\\ALLFILE\\PROJECT\\UserExperiencePreset\\UEP\\UEP\\obj\\",
+        "projectPath": "C:\\Users\\dowon\\Desktop\\open9_UserExperiencePreset-master\\UEP\\UEP\\UEP.csproj",
+        "packagesPath": "C:\\Users\\dowon\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\dowon\\Desktop\\open9_UserExperiencePreset-master\\UEP\\UEP\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\qhrhk\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\dowon\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -25,7 +25,8 @@
           "net8.0-windows7.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {}
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net8.0-windows7.0": {
