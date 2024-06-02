@@ -24,6 +24,9 @@ namespace UEP
         private TabControl tabControl1;
         private TabPage tabPage1;
 
+        private TrackBar trackBarMouseSpeed;
+        private TextBox txtSpeedValue;
+
         //private int rowIndexFromMouseDown;
         //private int rowIndexOfItemUnderMouseToDrop;
 
@@ -33,7 +36,6 @@ namespace UEP
         {
             InitializeComponent();
             InitializeComponents();
-
             this.Size = new Size(1200, 1200);
             this.StartPosition = FormStartPosition.CenterScreen;
 
@@ -160,6 +162,9 @@ namespace UEP
             this.Controls.Add(btnRunPath);
             this.Controls.Add(comboBox);
             this.Controls.Add(btnProcessRefresh);
+
+            // Mouse tab UI 요소 추가
+            InitializeMouseTabComponents(tabPage2);
         }
 
 
@@ -712,12 +717,12 @@ namespace UEP
 
             if (IsWindowVisible(hWnd))
             {
-                
-                
+
+
                 StringBuilder sb = new StringBuilder(256);
                 if (GetWindowText(hWnd, sb, sb.Capacity) > 0)
                 {
-                    
+
 
                     RECT rect;
                     GetWindowRect(hWnd, out rect);
@@ -899,70 +904,173 @@ namespace UEP
         //        }
         //        return true; // Return true to continue enumerating the next window
         //    }
-    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // 윈도우 상태 가져오는데 필요한 클래스
-    public class User33
-    {
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool GetWindowPlacement(IntPtr hWnd, ref WINDOWPLACEMENT lpwndpl);
-
-        public struct WINDOWPLACEMENT
+        private void InitializeMouseTabComponents(TabPage tabPageMouse) // 전체적인 마우스 탭 관리
         {
-            public int length;
-            public int flags;
-            public int showCmd;
-            public System.Drawing.Point ptMinPosition;
-            public System.Drawing.Point ptMaxPosition;
-            public System.Drawing.Rectangle rcNormalPosition;
+            // 마우스 속도 조절 관련
+            System.Windows.Forms.Label lblMouseSpeed = new System.Windows.Forms.Label();
+            lblMouseSpeed.Text = "마우스 속도 조절:";
+            lblMouseSpeed.Location = new Point(20, 20);     // 위치
+            lblMouseSpeed.Size = new Size(120, 20);         // 크기
+
+            TrackBar trackBarMouseSpeed = new TrackBar();
+            trackBarMouseSpeed.Location = new Point(150, 20); // 위치
+            trackBarMouseSpeed.Size = new Size(250, 45);        // 크기
+            trackBarMouseSpeed.Minimum = 1;
+            trackBarMouseSpeed.Maximum = 20;
+            trackBarMouseSpeed.TickFrequency = 1;
+            trackBarMouseSpeed.ValueChanged += TrackBarMouseSpeed_ValueChanged;
+
+            // 텍스트 박스로 트랙바 값 표시
+            txtSpeedValue = new TextBox();
+            txtSpeedValue.ReadOnly = true; // 읽기 전용으로 설정하여 사용자가 텍스트를 편집하지 못하도록 함
+            txtSpeedValue.Location = new Point(410, 20);
+            txtSpeedValue.Size = new Size(20, 20);
+            txtSpeedValue.TextAlign = HorizontalAlignment.Center;
+            txtSpeedValue.Text = trackBarMouseSpeed.Value.ToString(); // 초기값 설정
+
+            // 마우스 반전 기능 (아직 구현 안함)
+            CheckBox chkInvertMouse = new CheckBox();
+            chkInvertMouse.Text = "마우스 반전";
+            chkInvertMouse.Location = new Point(20, 60);
+            chkInvertMouse.Size = new Size(100, 20);
+            chkInvertMouse.CheckedChanged += new EventHandler(InvertMouse);
+
+            // 마우스 가만히 두면 커서 없어지는 기능 (아직 구현 안함)
+            CheckBox chkHideCursor = new CheckBox();
+            chkHideCursor.Text = "커서 숨김";
+            chkHideCursor.Location = new Point(20, 100);
+            chkHideCursor.Size = new Size(100, 20);
+            chkHideCursor.CheckedChanged += new EventHandler(HideCursor);
+
+            // 마우스 휠 감도 기능 (아직 구현 안함)
+            System.Windows.Forms.Label lblWheelSensitivity = new System.Windows.Forms.Label();
+            lblWheelSensitivity.Text = "휠 감도:";
+            lblWheelSensitivity.Location = new Point(20, 140);
+            lblWheelSensitivity.Size = new Size(100, 20);
+
+            TrackBar trackBarWheelSensitivity = new TrackBar();
+            trackBarWheelSensitivity.Location = new Point(130, 140);
+            trackBarWheelSensitivity.Size = new Size(170, 45);
+            trackBarWheelSensitivity.Minimum = 1;
+            trackBarWheelSensitivity.Maximum = 10;
+            trackBarWheelSensitivity.TickFrequency = 1;
+            trackBarWheelSensitivity.ValueChanged += new EventHandler((sender, e) => SetWheelSensitivity(trackBarWheelSensitivity.Value));
+
+            // UI 요소를 탭 페이지에 추가
+            tabPageMouse.Controls.Add(lblMouseSpeed);
+            tabPageMouse.Controls.Add(trackBarMouseSpeed);
+            tabPageMouse.Controls.Add(txtSpeedValue);
+            tabPageMouse.Controls.Add(chkInvertMouse);
+            tabPageMouse.Controls.Add(chkHideCursor);
+            tabPageMouse.Controls.Add(lblWheelSensitivity);
+            tabPageMouse.Controls.Add(trackBarWheelSensitivity);
+
+
+        }
+        private void InvertMouse(object sender, EventArgs e) // 마우스 반전 (아직 구현 안함)
+        {
+            CheckBox chk = sender as CheckBox;
+            if (chk != null)
+            {
+                // 마우스 반전 로직 구현
+                MessageBox.Show($"마우스 반전: {chk.Checked}");
+            }
         }
 
-        public const int SW_SHOWMAXIMIZED = 3;
-        public const int SW_SHOWMINIMIZED = 2;
-        public const int SW_SHOWNORMAL = 1;
-    }
-
-
-
-    // 윈도우 크기 가져오는데 필요한 클래스
-    public class User32
-    {
-        [StructLayout(LayoutKind.Sequential)]
-        public struct Rect
+        private void HideCursor(object sender, EventArgs e) // 커서 숨기기 (아직 구현 안함)
         {
-            public int Left;
-            public int Top;
-            public int Right;
-            public int Bottom;
+            CheckBox chk = sender as CheckBox;
+            if (chk != null)
+            {
+                // 커서 숨김 로직 구현
+                MessageBox.Show($"커서 숨김: {chk.Checked}");
+            }
         }
 
-        [DllImport("user32.dll", SetLastError = true)]
-        public static extern bool GetWindowRect(IntPtr hWnd, ref Rect rect);
+        private void SetWheelSensitivity(int sensitivity) // 휠 감도 조절 (아직 구현 안함)
+        {
+            // 휠 감도 설정 로직 구현
+            MessageBox.Show($"휠 감도: {sensitivity}");
+        }
+
+        private void TrackBarMouseSpeed_ValueChanged(object sender, EventArgs e)
+        {
+            TrackBar trackBar = sender as TrackBar;
+            if (trackBar != null)
+            {
+
+                // 진행 막대 바 값 업데이트
+                txtSpeedValue.Text = trackBar.Value.ToString();
+
+                // 마우스 속도 조절
+                MouseControl mouseControl = new MouseControl();
+                mouseControl.SetMouseSpeed(trackBar.Value);
+            }
+        }
+
+        public class MouseControl
+        {
+            // SystemParametersInfo 함수를 호출하기 위한 상수 및 DLLImport 선언
+            private const uint SPI_SETLOGICALDPI = 0x007E;
+            private const uint SPI_SETMOUSESPEED = 0x0071;
+            private const uint SPIF_SENDCHANGE = 0x02;
+
+            [DllImport("user32.dll", SetLastError = true)]
+            private static extern bool SystemParametersInfo(uint uiAction, uint uiParam, IntPtr pvParam, uint fWinIni);
+
+            [DllImport("user32.dll", SetLastError = true)]
+            private static extern bool SystemParametersInfo(uint uiAction, uint uiParam, int pvParam, uint fWinIni);
+
+            public void SetMouseSpeed(int speed)
+            {
+                // SystemParametersInfo 함수 호출하여 마우스 속도 설정 변경
+                if (!SystemParametersInfo(SPI_SETMOUSESPEED, 0, speed, SPIF_SENDCHANGE))
+                {
+                    MessageBox.Show("마우스 속도를 변경할 수 없습니다.");
+                }
+            }
+
+        }
+
+        // 윈도우 상태 가져오는데 필요한 클래스
+        public class User33
+        {
+            [DllImport("user32.dll")]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            public static extern bool GetWindowPlacement(IntPtr hWnd, ref WINDOWPLACEMENT lpwndpl);
+
+            public struct WINDOWPLACEMENT
+            {
+                public int length;
+                public int flags;
+                public int showCmd;
+                public System.Drawing.Point ptMinPosition;
+                public System.Drawing.Point ptMaxPosition;
+                public System.Drawing.Rectangle rcNormalPosition;
+            }
+
+            public const int SW_SHOWMAXIMIZED = 3;
+            public const int SW_SHOWMINIMIZED = 2;
+            public const int SW_SHOWNORMAL = 1;
+        }
+
+
+
+        // 윈도우 크기 가져오는데 필요한 클래스
+        public class User32
+        {
+            [StructLayout(LayoutKind.Sequential)]
+            public struct Rect
+            {
+                public int Left;
+                public int Top;
+                public int Right;
+                public int Bottom;
+            }
+
+            [DllImport("user32.dll", SetLastError = true)]
+            public static extern bool GetWindowRect(IntPtr hWnd, ref Rect rect);
+        }
     }
-
-
-
 }
