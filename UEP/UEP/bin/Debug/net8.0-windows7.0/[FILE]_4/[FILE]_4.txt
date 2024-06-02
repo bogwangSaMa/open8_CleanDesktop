@@ -1,0 +1,12 @@
+C:\Users\qhrhk\AppData\Local\SourceTree\app-3.4.18\SourceTree.exe
+C:\Windows\SystemApps\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\TextInputHost.exe
+C:\Program Files (x86)\Kakao\KakaoTalk\KakaoTalk.exe
+C:\Windows\ImmersiveControlPanel\SystemSettings.exe
+
+
+
+//Sourcetree//SourceTree//-32000//-32000//160//28//Minimized
+//Windows 입력 환경//TextInputHost//0//0//2560//1440//Normal
+//KakaoTalkShadowWnd//KakaoTalk//4081//673//388//648//Normal
+//오픈소스 9팀//KakaoTalk//4085//676//380//640//Normal
+//설정//ApplicationFrameHost//818//336//1216//941//Normal
