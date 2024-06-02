@@ -7,11 +7,85 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
 using static System.Net.Mime.MediaTypeNames;
+using static System.Windows.Forms.AxHost;
+using static System.Windows.Forms.DataFormats;
 
 namespace UEP
 {
     public partial class Form1 : Form
     {
+        // 필요한 외부 함수 선언
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool IsWindowVisible(IntPtr hWnd);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern int GetWindowThreadProcessId(IntPtr hWnd, out int lpdwProcessId);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool GetWindowPlacement(IntPtr hWnd, out WINDOWPLACEMENT lpwndpl);
+
+        private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+        // P/Invoke 선언
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool QueryFullProcessImageName([In] IntPtr hProcess, [In] uint dwFlags, [Out] StringBuilder lpExeName, ref uint lpdwSize);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern IntPtr OpenProcess(uint processAccess, bool bInheritHandle, uint processId);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool CloseHandle(IntPtr hObject);
+
+        [DllImport("Shell32.dll", SetLastError = true)]
+        static extern int ExtractIconEx(string sFile, int iIndex, out IntPtr piLargeVersion, out IntPtr piSmallVersion, int amountIcons);
+
+        const uint PROCESS_QUERY_INFORMATION = 0x0400;
+        const uint PROCESS_VM_READ = 0x0010;
+
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern bool DestroyIcon(IntPtr hIcon);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RECT
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct POINT
+        {
+            public int X;
+            public int Y;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct WINDOWPLACEMENT
+        {
+            public int Length;
+            public int Flags;
+            public int ShowCmd;
+            public POINT MinPosition;
+            public POINT MaxPosition;
+            public RECT NormalPosition;
+        }
+
         private DataGridView dataGridView1;
         private DataGridView dataGridView2;
         private ImageList imageList1;
@@ -19,6 +93,7 @@ namespace UEP
         private Button btnSavePath;
         private Button btnRunPath;
         private Button btnProcessRefresh;
+        private Button btnDeletePath;
         private ComboBox comboBox;
 
         private TabControl tabControl1;
@@ -26,9 +101,6 @@ namespace UEP
 
         private TrackBar trackBarMouseSpeed;
         private TextBox txtSpeedValue;
-
-        //private int rowIndexFromMouseDown;
-        //private int rowIndexOfItemUnderMouseToDrop;
 
         private string selectFile;
 
@@ -89,10 +161,11 @@ namespace UEP
             this.dataGridView2.AllowUserToDeleteRows = false;
             this.dataGridView2.AllowUserToResizeColumns = true;
             this.dataGridView2.RowHeadersVisible = false;
+            // dataGridView2.SelectionMode = DataGridViewSelectionMode.FullRowSelect; // 행을 선택할 때 전체를 선택하도록 하기
 
 
             // 컬럼 추가 및 초기 너비 설정
-            AddImageColumn(".", 60, 1); // 이미지 컬럼 추가
+            AddImageColumn(".", 30, 1); // 이미지 컬럼 추가
             AddColumn("App Name", 300, 1);
             AddColumn("Process Name", 200, 1);
             AddColumn("X", 100, 1);
@@ -102,7 +175,8 @@ namespace UEP
             AddColumn("State", 100, 1);
 
             // 컬럼 추가 및 초기 너비 설정
-            AddImageColumn(".", 60, 2); // 이미지 컬럼 추가
+            AddColumn("순서", 50, 2);
+            AddImageColumn(".", 30, 2); // 이미지 컬럼 추가
             AddColumn("App Name", 300, 2);
             AddColumn("Process Name", 200, 2);
             AddColumn("X", 100, 2);
@@ -120,6 +194,8 @@ namespace UEP
             LoadProcesses();
 
             dataGridView1.CellDoubleClick += new DataGridViewCellEventHandler(gridView1_CellClick); // 이거 위치 옮겨도 되는지 확인해보자
+
+            dataGridView2.CellDoubleClick += new DataGridViewCellEventHandler(dataGridView2_CellDoubleClick);
 
             // 텍스트 박스 설정
             txtProcessName = new TextBox();
@@ -147,6 +223,13 @@ namespace UEP
             btnRunPath.Text = "실행"; // 버튼 텍스트 설정
             btnRunPath.Click += new EventHandler(btnRunPath_Click); // 클릭 이벤트 핸들러 연결
 
+            // 그리드뷰2 행 삭제 버튼
+            btnDeletePath = new Button();
+            btnDeletePath.Location = new Point(30, 800); // 위치 설정
+            btnDeletePath.Size = new Size(80, 40); // 크기 설정
+            btnDeletePath.Text = "삭제"; // 버튼 텍스트 설정
+            btnDeletePath.Click += new EventHandler(deleteButton_Click); // 클릭 이벤트 핸들러 연결
+
             // 프리셋 목록 보여주기
             comboBox = new ComboBox();
             comboBox.Location = new Point(30, 450);
@@ -162,6 +245,7 @@ namespace UEP
             this.Controls.Add(btnRunPath);
             this.Controls.Add(comboBox);
             this.Controls.Add(btnProcessRefresh);
+            this.Controls.Add(btnDeletePath);
 
             // Mouse tab UI 요소 추가
             InitializeMouseTabComponents(tabPage2);
@@ -185,7 +269,6 @@ namespace UEP
             {
                 this.dataGridView2.Columns.Add(column);
             }
-
         }
 
 
@@ -234,6 +317,13 @@ namespace UEP
         private void btnProcessRefresh_Click(object sender, EventArgs e)
         {
             LoadProcesses();
+        }
+
+        private void dataGridView2_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            DataGridViewRow selectedRow = dataGridView2.Rows[e.RowIndex];
+            Form2 detailsForm = new Form2(selectedRow);
+            detailsForm.ShowDialog();
         }
 
 
@@ -356,14 +446,74 @@ namespace UEP
         }
 
 
-        // 그리드뷰2의 프로세스 실행파일 정보를 텍스트 파일에 저장하는 함수
-        static void SaveProcessPathToFile(string filePath, DataGridView gridView2)
+        ////그리드뷰2의 프로세스 실행파일 정보를 텍스트 파일에 저장하는 함수
+        //static void SaveProcessPathToFile(string filePath, DataGridView gridView2)
+        //{
+        //    using (StreamWriter sw = new StreamWriter(filePath, false))
+        //    {
+        //        foreach (DataGridViewRow row in gridView2.Rows)
+        //        {
+        //            if (row.Cells["App Name"].Value != null) // "MainWindowTitle"은 메인 윈도우 타이틀이 표시되는 컬럼의 이름입니다.
+        //            {
+        //                string windowTitle = row.Cells["App Name"].Value.ToString();
+
+        //                // 시스템에서 실행 중인 모든 프로세스를 가져옵니다.
+        //                Process[] processes = Process.GetProcesses();
+
+        //                foreach (Process prs in processes)
+        //                {
+        //                    // 메인 윈도우 타이틀이 사용자가 지정한 값과 일치하는지 확인합니다.
+        //                    if (prs.MainWindowTitle == windowTitle)
+        //                    {
+        //                        try
+        //                        {
+        //                            // 프로세스의 실행 파일 경로를 가져옵니다.
+        //                            string processPath = prs.MainModule.FileName;
+
+        //                            // 실행 파일 경로를 파일에 씁니다.
+        //                            sw.WriteLine($"{processPath}");
+        //                            break; // 일치하는 첫 번째 프로세스를 찾았으므로 반복을 중단합니다.
+        //                        }
+        //                        catch (Exception ex)
+        //                        {
+        //                            // 접근할 수 없는 프로세스는 "접근 불가"로 표시합니다.
+        //                            sw.WriteLine($"WindowTitle: {windowTitle}, 경로: 접근 불가 - {ex.Message}");
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //        }
+        //        // 행 정보를 파일에 추가합니다.
+        //        sw.WriteLine("\n\n");
+
+        //        foreach (DataGridViewRow row in gridView2.Rows)
+        //        {
+        //            if (row.Cells["App Name"].Value != null)
+        //            {
+
+        //                string AppName = row.Cells["App Name"].Value.ToString();
+        //                string ProcessName = row.Cells["Process Name"].Value.ToString();
+        //                string X = row.Cells["X"].Value.ToString();
+        //                string Y = row.Cells["Y"].Value.ToString();
+        //                string Width = row.Cells["Width"].Value.ToString();
+        //                string Height = row.Cells["Height"].Value.ToString();
+        //                string State = row.Cells["State"].Value.ToString();
+
+        //                sw.WriteLine("//" + AppName + "//" + ProcessName + "//" + X + "//" + Y + "//" + Width + "//" + Height + "//" + State);
+
+        //            }
+        //        }
+        //    }
+        //}
+
+
+        public void SaveProcessPathToFile(string filePath, DataGridView gridView2)
         {
             using (StreamWriter sw = new StreamWriter(filePath, false))
             {
                 foreach (DataGridViewRow row in gridView2.Rows)
                 {
-                    if (row.Cells["App Name"].Value != null) // "MainWindowTitle"은 메인 윈도우 타이틀이 표시되는 컬럼의 이름입니다.
+                    if (row.Cells["App Name"].Value != null) // "App Name"은 메인 윈도우 타이틀이 표시되는 컬럼의 이름입니다.
                     {
                         string windowTitle = row.Cells["App Name"].Value.ToString();
 
@@ -377,43 +527,52 @@ namespace UEP
                             {
                                 try
                                 {
-                                    // 프로세스의 실행 파일 경로를 가져옵니다.
-                                    string processPath = prs.MainModule.FileName;
+                                    sw.WriteLine($"2");
+                                    WriteProcessPathToFile(prs, sw);
 
-                                    // 실행 파일 경로를 파일에 씁니다.
-                                    sw.WriteLine($"{processPath}");
+
                                     break; // 일치하는 첫 번째 프로세스를 찾았으므로 반복을 중단합니다.
                                 }
                                 catch (Exception ex)
                                 {
+                                    sw.WriteLine($"3");
                                     // 접근할 수 없는 프로세스는 "접근 불가"로 표시합니다.
                                     sw.WriteLine($"WindowTitle: {windowTitle}, 경로: 접근 불가 - {ex.Message}");
+
+
                                 }
                             }
                         }
-                    }
-                }
-                // 행 정보를 파일에 추가합니다.
-                sw.WriteLine("\n\n");
-
-                foreach (DataGridViewRow row in gridView2.Rows)
-                {
-                    if (row.Cells["App Name"].Value != null)
-                    {
-
-                        string AppName = row.Cells["App Name"].Value.ToString();
-                        string ProcessName = row.Cells["Process Name"].Value.ToString();
-                        string X = row.Cells["X"].Value.ToString();
-                        string Y = row.Cells["Y"].Value.ToString();
-                        string Width = row.Cells["Width"].Value.ToString();
-                        string Height = row.Cells["Height"].Value.ToString();
-                        string State = row.Cells["State"].Value.ToString();
-
-                        sw.WriteLine("//" + AppName + "//" + ProcessName + "//" + X + "//" + Y + "//" + Width + "//" + Height + "//" + State);
-
+                        // 프로세스의 행 정보를 파일에 추가합니다.
+                        WriteProcessRowToFile(row, sw);
+                        sw.WriteLine($"\n");
                     }
                 }
             }
+        }
+
+
+
+        public void WriteProcessPathToFile(Process prs, StreamWriter sw)
+        {
+            // 접근할 수 없는 프로세스는 "접근 불가"로 표시합니다.
+            sw.WriteLine($"1");
+            string processPath = prs.MainModule.FileName;
+            sw.WriteLine($"{processPath}");
+        }
+
+        // 프로세스의 행 정보를 파일에 추가하는 함수
+        public void WriteProcessRowToFile(DataGridViewRow row, StreamWriter sw)
+        {
+            string appName = row.Cells["App Name"].Value.ToString();
+            string processName = row.Cells["Process Name"].Value.ToString();
+            string x = row.Cells["X"].Value.ToString();
+            string y = row.Cells["Y"].Value.ToString();
+            string width = row.Cells["Width"].Value.ToString();
+            string height = row.Cells["Height"].Value.ToString();
+            string state = row.Cells["State"].Value.ToString();
+
+            sw.WriteLine($"//{appName}//{processName}//{x}//{y}//{width}//{height}//{state}");
         }
 
 
@@ -545,10 +704,15 @@ namespace UEP
                 foreach (DataGridViewRow row in dataGridView2.Rows)
                 {
                     bool allCellsMatch = true;
-                    foreach (DataGridViewCell cell in selectedRow.Cells)
+                    // 그리드뷰1의 셀을 순회하면서 그리드뷰2의 인덱스 값과 비교합니다.
+                    // 여기서 i는 그리드뷰1의 인덱스, i+1은 그리드뷰2의 인덱스에 해당합니다.
+                    for (int i = 0; i < selectedRow.Cells.Count; i++)
                     {
+                        // 그리드뷰2의 셀 인덱스는 그리드뷰1의 셀 인덱스보다 하나 더 높습니다.
+                        int gridView2Index = i + 1;
+
                         // 해당 열의 값이 다르면, 이 행은 중복되지 않습니다.
-                        if (row.Cells[cell.ColumnIndex].Value.ToString() != cell.Value.ToString())
+                        if (row.Cells[gridView2Index].Value?.ToString() != selectedRow.Cells[i].Value?.ToString())
                         {
                             allCellsMatch = false;
                             break;
@@ -563,111 +727,104 @@ namespace UEP
                     }
                 }
 
+
+
+
                 // 중복되지 않은 경우에만 새 행을 추가합니다.
                 if (!isDuplicate)
                 {
                     int newRow = dataGridView2.Rows.Add();
                     foreach (DataGridViewCell cell in selectedRow.Cells)
                     {
-                        dataGridView2.Rows[newRow].Cells[cell.ColumnIndex].Value = cell.Value;
+                        dataGridView2.Rows[newRow].Cells[cell.ColumnIndex + 1].Value = cell.Value; // +1은 순서 열을 고려한 것
+                    }
+
+                    // 'App Name'이 현재 실행 중인 프로세스의 'WindowTitle'과 일치하는지 확인합니다.
+                    string appName = selectedRow.Cells["App Name"].Value.ToString();
+                    bool isAppNameMatched = false;
+
+                    // 현재 실행 중인 모든 프로세스를 검사합니다.
+                    foreach (Process process in Process.GetProcesses())
+                    {
+                        try
+                        {
+                            if (process.MainWindowTitle.Contains(appName))
+                            {
+                                isAppNameMatched = true;
+                                break;
+                            }
+                        }
+                        catch
+                        {
+                            // 액세스 거부와 같은 예외를 처리합니다.
+                        }
+                    }
+
+                    // 'App Name'이 실행 중인 프로세스의 'WindowTitle'과 일치하지 않는 경우, 행을 분홍색으로 색칠합니다.
+                    if (!isAppNameMatched)
+                    {
+                        dataGridView2.Rows[newRow].DefaultCellStyle.BackColor = Color.Pink;
+                    }
+
+                    // 추가된 행의 순서를 설정합니다.
+                    UpdateOrderColumn();
+                }
+
+            }
+
+        }
+
+        // 삭제버튼을 누르면 그리드뷰2의 행을 삭제하는 함수
+        private void deleteButton_Click(object sender, EventArgs e)
+        {
+            // 선택된 셀이 있는지 확인합니다.
+            if (dataGridView2.SelectedCells.Count > 0)
+            {
+                // 삭제할 행을 보관할 리스트를 생성합니다.
+                List<DataGridViewRow> rowsToDelete = new List<DataGridViewRow>();
+
+                // 선택된 셀의 행을 리스트에 추가합니다 (새 행은 제외).
+                foreach (DataGridViewCell cell in dataGridView2.SelectedCells)
+                {
+                    DataGridViewRow row = cell.OwningRow;
+                    if (!row.IsNewRow && !rowsToDelete.Contains(row))
+                    {
+                        rowsToDelete.Add(row);
                     }
                 }
+
+                // 리스트에 있는 행들을 삭제합니다.
+                foreach (DataGridViewRow row in rowsToDelete)
+                {
+                    dataGridView2.Rows.Remove(row);
+                }
+
+                // 행을 삭제한 후 순서 열을 업데이트합니다.
+                UpdateOrderColumn();
+            }
+            else
+            {
+                MessageBox.Show("삭제할 행의 셀을 선택해주세요.", "알림", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 
-
-        // 윈도우의 상태를 가져오는 함수
-        private string GetWindowState(IntPtr hWnd)
+        // 추가된 행의 순서를 설정하는 함수
+        private void UpdateOrderColumn()
         {
-            User33.WINDOWPLACEMENT placement = new User33.WINDOWPLACEMENT();
-            if (User33.GetWindowPlacement(hWnd, ref placement))
+            int order = 1;
+            foreach (DataGridViewRow row in dataGridView2.Rows)
             {
-                switch (placement.showCmd)
+                if (!row.IsNewRow) // 새 행이 아닌 경우에만 순서를 업데이트합니다.
                 {
-                    case User33.SW_SHOWMAXIMIZED:
-                        return "Max";
-                    case User33.SW_SHOWMINIMIZED:
-                        return "Min";
-                    case User33.SW_SHOWNORMAL:
-                        return "Normal";
-                    default:
-                        return "Unknown";
+                    row.Cells["순서"].Value = order++;
                 }
             }
-            return "Error";
         }
 
-        // 필요한 외부 함수 선언
-        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
 
-        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern bool IsWindowVisible(IntPtr hWnd);
 
-        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
 
-        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern int GetWindowThreadProcessId(IntPtr hWnd, out int lpdwProcessId);
 
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern bool GetWindowPlacement(IntPtr hWnd, out WINDOWPLACEMENT lpwndpl);
-
-        private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
-
-        // P/Invoke 선언
-        [DllImport("user32.dll", SetLastError = true)]
-        static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool QueryFullProcessImageName([In] IntPtr hProcess, [In] uint dwFlags, [Out] StringBuilder lpExeName, ref uint lpdwSize);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        static extern IntPtr OpenProcess(uint processAccess, bool bInheritHandle, uint processId);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool CloseHandle(IntPtr hObject);
-
-        [DllImport("Shell32.dll", SetLastError = true)]
-        static extern int ExtractIconEx(string sFile, int iIndex, out IntPtr piLargeVersion, out IntPtr piSmallVersion, int amountIcons);
-
-        const uint PROCESS_QUERY_INFORMATION = 0x0400;
-        const uint PROCESS_VM_READ = 0x0010;
-
-        [DllImport("user32.dll", SetLastError = true)]
-        static extern bool DestroyIcon(IntPtr hIcon);
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct RECT
-        {
-            public int Left;
-            public int Top;
-            public int Right;
-            public int Bottom;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct POINT
-        {
-            public int X;
-            public int Y;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct WINDOWPLACEMENT
-        {
-            public int Length;
-            public int Flags;
-            public int ShowCmd;
-            public POINT MinPosition;
-            public POINT MaxPosition;
-            public RECT NormalPosition;
-        }
 
         private void SaveIconFromWindow(IntPtr hWnd, string windowTitle)
         {
@@ -734,10 +891,21 @@ namespace UEP
                     string windowState = placement.ShowCmd switch
                     {
                         1 => "Normal",
-                        2 => "Minimized",
-                        3 => "Maximized",
+                        2 => "Min",
+                        3 => "Max",
                         _ => "Unknown"
                     };
+
+
+                    // 창 상태가 최소화일 때 좌표값을 0으로 설정
+                    if (windowState == "Min")
+                    {
+                        rect.Left = 0;
+                        rect.Top = 0;
+                        rect.Right = 0; // 너비를 0으로 설정하거나 필요에 따라 조정
+                        rect.Bottom = 0; // 높이를 0으로 설정하거나 필요에 따라 조정
+                    }
+
 
                     // 프로세스 ID 가져오기
                     GetWindowThreadProcessId(hWnd, out int processId);
@@ -787,123 +955,10 @@ namespace UEP
         }
 
 
-        //private void LoadProcesses()
-        //{
-
-        //    EnumWindows(new EnumWindowsProc(EnumWindowsCallback), IntPtr.Zero);
-
-
-        //    dataGridView1.Rows.Clear(); // DataGridView 내용을 클리어
-        //    Process[] processes = Process.GetProcesses();
-        //    foreach (Process prs in processes)
-        //    {
-        //        // MainWindowTitle이 비어있지 않은 프로세스만 필터링
-        //        if (!string.IsNullOrEmpty(prs.MainWindowTitle))
-        //        {
-        //            int imageIndex;
-
-
-        //            try
-        //            {
-        //                // 프로세스의 메인 모듈로부터 아이콘 추출 시도
-        //                Icon icon = Icon.ExtractAssociatedIcon(prs.MainModule.FileName);
-        //                // Icon을 Image 형태로 변환
-        //                Bitmap iconBitmap = icon.ToBitmap();
-        //                imageList1.Images.Add(iconBitmap); // ImageList에 아이콘 추가
-        //                imageIndex = imageList1.Images.Count - 1; // 추가된 아이콘의 인덱스
-
-        //            }
-        //            catch (Exception ex)
-        //            {
-        //                // 추출 실패 시 기본 Error 아이콘 사용
-        //                imageList1.Images.Add(SystemIcons.Error);
-        //                imageIndex = imageList1.Images.Count - 1; // 추가된 Error 아이콘의 인덱스
-
-        //            }
-
-        //            // 데이터 그리드뷰에 행 추가
-        //            var row = new DataGridViewRow();
-        //            row.CreateCells(dataGridView1);
-
-        //            // 아이콘을 이미지 셀에 추가
-        //            row.Cells[0].Value = imageList1.Images[imageIndex];
-
-        //            // 프로세스 이름과 아이콘 추가
-        //            row.Cells[1].Value = prs.MainWindowTitle;
-        //            row.Cells[2].Value = prs.ProcessName;
-
-        //            // 윈도우 상태 정보 추가
-        //            string windowState = GetWindowState(prs.MainWindowHandle);
-        //            row.Cells[7].Value = windowState;
 
 
 
-        //            // 윈도우 위치 및 크기 정보 추가
-        //            try
-        //            {
-        //                var rect = new User32.Rect();
-        //                User32.GetWindowRect(prs.MainWindowHandle, ref rect);
-        //                row.Cells[3].Value = rect.Left.ToString(); // X축 위치
-        //                row.Cells[4].Value = rect.Top.ToString(); // Y축 위치
-        //                row.Cells[5].Value = (rect.Right - rect.Left).ToString(); // 가로 크기
-        //                row.Cells[6].Value = (rect.Bottom - rect.Top).ToString(); // 세로 크기
-        //            }
-        //            catch
-        //            {
-        //                row.Cells[3].Value = "N/A"; // X축 위치
-        //                row.Cells[4].Value = "N/A"; // Y축 위치
-        //                row.Cells[5].Value = "N/A"; // 가로 크기
-        //                row.Cells[6].Value = "N/A"; // 세로 크기
-        //            }
-        //            dataGridView1.Rows.Add(row);
-        //        }
-        //    }
-        //}
 
-
-
-        //    private static bool EnumWindowsCallback(IntPtr hWnd, IntPtr lParam)
-        //    {
-        //        if (IsWindowVisible(hWnd))
-        //        {
-        //            StringBuilder sb = new StringBuilder(256);
-        //            if (GetWindowText(hWnd, sb, sb.Capacity) > 0)
-        //            {
-        //                RECT rect;
-        //                GetWindowRect(hWnd, out rect);
-
-        //                WINDOWPLACEMENT placement = new WINDOWPLACEMENT();
-        //                placement.Length = Marshal.SizeOf(placement);
-        //                GetWindowPlacement(hWnd, out placement);
-
-        //                string windowState = placement.ShowCmd switch
-        //                {
-        //                    1 => "Normal",
-        //                    2 => "Minimized",
-        //                    3 => "Maximized",
-        //                    _ => "Unknown"
-        //                };
-
-        //                // 프로세스 ID 가져오기
-        //                GetWindowThreadProcessId(hWnd, out int processId);
-
-        //                // 프로세스 이름 가져오기
-        //                string processName = "Unknown";
-        //                try
-        //                {
-        //                    Process process = Process.GetProcessById(processId);
-        //                    processName = process.ProcessName;
-        //                }
-        //                catch (Exception ex)
-        //                {
-        //                    processName = $"Error: {ex.Message}";
-        //                }
-
-        //                Console.WriteLine($"Handle: {hWnd}, Title: {sb}, Process Name: {processName}, X: {rect.Left}, Y: {rect.Top}, Width: {rect.Right - rect.Left}, Height: {rect.Bottom - rect.Top}, State: {windowState}");
-        //            }
-        //        }
-        //        return true; // Return true to continue enumerating the next window
-        //    }
 
         private void InitializeMouseTabComponents(TabPage tabPageMouse) // 전체적인 마우스 탭 관리
         {
@@ -1072,5 +1127,8 @@ namespace UEP
             [DllImport("user32.dll", SetLastError = true)]
             public static extern bool GetWindowRect(IntPtr hWnd, ref Rect rect);
         }
+
+
+
     }
 }

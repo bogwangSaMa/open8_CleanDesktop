@@ -31,3 +31,4 @@ C:\Users\dowon\Desktop\open9_UserExperiencePreset-master\UEP\UEP\obj\Debug\net8.
 C:\Users\dowon\Desktop\open9_UserExperiencePreset-master\UEP\UEP\obj\Debug\net8.0-windows7.0\UEP.pdb
 C:\Users\dowon\Desktop\open9_UserExperiencePreset-master\UEP\UEP\obj\Debug\net8.0-windows7.0\UEP.genruntimeconfig.cache
 C:\Users\dowon\Desktop\open9_UserExperiencePreset-master\UEP\UEP\obj\Debug\net8.0-windows7.0\ref\UEP.dll
+C:\ALLFILE\PROJECT\UserExperiencePreset\UEP\UEP\obj\Debug\net8.0-windows7.0\UEP.Form2.resources

@@ -8,23 +8,23 @@
     "net8.0-windows7.0": []
   },
   "packageFolders": {
-    "C:\\Users\\dowon\\.nuget\\packages\\": {},
+    "C:\\Users\\qhrhk\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\dowon\\Desktop\\open9_UserExperiencePreset-master\\UEP\\UEP\\UEP.csproj",
+      "projectUniqueName": "C:\\ALLFILE\\PROJECT\\UserExperiencePreset\\UEP\\UEP\\UEP.csproj",
       "projectName": "UEP",
-      "projectPath": "C:\\Users\\dowon\\Desktop\\open9_UserExperiencePreset-master\\UEP\\UEP\\UEP.csproj",
-      "packagesPath": "C:\\Users\\dowon\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\dowon\\Desktop\\open9_UserExperiencePreset-master\\UEP\\UEP\\obj\\",
+      "projectPath": "C:\\ALLFILE\\PROJECT\\UserExperiencePreset\\UEP\\UEP\\UEP.csproj",
+      "packagesPath": "C:\\Users\\qhrhk\\.nuget\\packages\\",
+      "outputPath": "C:\\ALLFILE\\PROJECT\\UserExperiencePreset\\UEP\\UEP\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\dowon\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\qhrhk\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -32,8 +32,7 @@
         "net8.0-windows7.0"
       ],
       "sources": {
-        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-        "https://api.nuget.org/v3/index.json": {}
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {}
       },
       "frameworks": {
         "net8.0-windows7.0": {

@@ -12,8 +12,8 @@
       }
     ],
     "additionalProbingPaths": [
-      "C:\\Users\\dowon\\.dotnet\\store\\|arch|\\|tfm|",
-      "C:\\Users\\dowon\\.nuget\\packages",
+      "C:\\Users\\qhrhk\\.dotnet\\store\\|arch|\\|tfm|",
+      "C:\\Users\\qhrhk\\.nuget\\packages",
       "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
     ],
     "configProperties": {
