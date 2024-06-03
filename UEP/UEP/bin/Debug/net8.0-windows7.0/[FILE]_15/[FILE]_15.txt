@@ -1,0 +1,18 @@
+//6e52e2ac92a07ad5 - 메모장//Notepad//2915//404//1309//705//Normal
+
+
+C:\Windows\system32\ApplicationFrameHost.exe
+//설정//SystemSettings//0//1//1200//932//Normal
+
+
+//[FILE]_111//explorer//44//805//896//554//Normal
+
+
+C:\Program Files\Google\Chrome\Application\chrome.exe
+//뤼튼 - Chrome//chrome//2568//24//1294//1392//Normal
+
+
+C:\Program Files\WindowsApps\Microsoft.WindowsNotepad_11.2402.22.0_x64__8wekyb3d8bbwe\Notepad\Notepad.exe
+//*추가사항 - 메모장//Notepad//1745//444//1309//705//Normal
+
+

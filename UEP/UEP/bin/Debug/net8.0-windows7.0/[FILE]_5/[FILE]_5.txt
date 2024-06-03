@@ -1,0 +1,8 @@
+C:\Users\qhrhk\AppData\Local\SourceTree\app-3.4.18\SourceTree.exe
+//Sourcetree//SourceTree//0//0//0//0//Min
+
+
+C:\Windows\SystemApps\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\TextInputHost.exe
+//Windows 입력 환경//TextInputHost//0//0//2560//1440//Normal
+
+
