@@ -1,9 +1,3 @@
-C:\Windows\ImmersiveControlPanel\SystemSettings.exe
-C:\Windows\ImmersiveControlPanel\SystemSettings.exe
-C:\Windows\SystemApps\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\TextInputHost.exe
+C:\Program Files\WindowsApps\NVIDIACorp.NVIDIAControlPanel_8.1.966.0_x64__56jybvy8sckqj\nvcplui.exe
+//NVIDIA 제어판//nvcplui//1248//612//974//718//Normal//C:\Program Files\WindowsApps\NVIDIACorp.NVIDIAControlPanel_8.1.966.0_x64__56jybvy8sckqj\nvcplui.exe
 
-
-
-//설정//SystemSettings//0//1//1200//932//Normal
-//설정//ApplicationFrameHost//818//336//1216//941//Normal
-//Windows 입력 환경//TextInputHost//0//0//2560//1440//Normal

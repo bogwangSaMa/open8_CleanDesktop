@@ -3,8 +3,10 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Reflection.Emit;
+using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Windows;
 using System.Windows.Forms;
 using static System.Net.Mime.MediaTypeNames;
 using static System.Windows.Forms.AxHost;
@@ -55,6 +57,17 @@ namespace UEP
         [DllImport("user32.dll", SetLastError = true)]
         static extern bool DestroyIcon(IntPtr hIcon);
 
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        [DllImport("user32.dll")]
+        static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        delegate bool EnumThreadDelegate(IntPtr hWnd, int lParam);
+
+        [DllImport("user32.dll")]
+        private static extern bool EnumThreadWindows(int dwThreadId, EnumThreadDelegate lpfn, IntPtr lParam);
+
         const uint PROCESS_QUERY_INFORMATION = 0x0400;
         const uint PROCESS_VM_READ = 0x0010;
 
@@ -102,6 +115,7 @@ namespace UEP
         private TrackBar trackBarMouseSpeed;
         private TextBox txtSpeedValue;
 
+        private string folderPath;
         private string selectFile;
 
         public Form1()
@@ -281,6 +295,33 @@ namespace UEP
         }
 
 
+
+        private void PrintGridViewData(DataGridView gridView)
+        {
+            // 그리드뷰의 행과 열 개수 가져오기
+            int rowCount = gridView.Rows.Count;
+            int columnCount = gridView.Columns.Count;
+
+            // 각 행과 열의 데이터를 콘솔에 출력
+            for (int row = 0; row < rowCount; row++)
+            {
+                string rowData = "";
+                for (int col = 0; col < columnCount; col++)
+                {
+                    // 셀의 값 가져오기
+                    object cellValue = gridView.Rows[row].Cells[col].Value;
+
+                    // 셀의 값을 문자열로 변환하여 rowData에 추가
+                    rowData += cellValue?.ToString() + "\t";
+                }
+                // 한 행의 데이터를 콘솔에 출력
+                Console.WriteLine(rowData);
+            }
+        }
+
+
+
+
         // 그리드뷰에 문자열 추가
         private void AddColumn(string name, int initialWidth, int num)
         {
@@ -300,7 +341,7 @@ namespace UEP
                 this.dataGridView2.Columns.Add(column);
             }
         }
-
+        // 그리드뷰에 숨겨진 문자열 추가
         private void AddHideColumn(string name, int initialWidth, int num)
         {
             var column = new DataGridViewTextBoxColumn();
@@ -322,7 +363,6 @@ namespace UEP
             }
         }
 
-
         // 그리드뷰에 이미지 추가
         private void AddImageColumn(string name, int initialWidth, int num)
         {
@@ -342,46 +382,26 @@ namespace UEP
             }
         }
 
-
-
-        // 이거 안됨 (확인 필요)///////프리셋 삭제 기능.///////////////
-        private void DeleteSelectedTxtFolder()
-        {
-            // 콤보박스에서 선택된 항목(txt 파일) 가져오기
-            string selectedFile = (string)comboBox.SelectedItem;
-
-            // 선택된 파일의 디렉토리 경로 가져오기
-            string directoryPath = Path.GetDirectoryName(selectedFile);
-            Console.WriteLine("------>" + directoryPath);
-
-            // 사용자에게 경고 메시지 표시
-            DialogResult result = MessageBox.Show($"'{directoryPath}' 폴더를 삭제하시겠습니까?", "폴더 삭제", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-
-            // 사용자가 '예'를 선택한 경우에만 폴더 삭제
-            if (result == DialogResult.Yes)
-            {
-                try
-                {
-                    // 선택된 파일이 포함된 폴더 삭제
-                    Directory.Delete(directoryPath, true);
-
-                    // 콤보박스에서 선택된 항목 제거
-                    comboBox.Items.Remove(selectedFile);
-                }
-                catch (Exception ex)
-                {
-                    // 폴더 삭제 중 오류 발생 시 메시지 박스 표시
-                    MessageBox.Show($"폴더 삭제 중 오류가 발생했습니다:\n{ex.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-        }
-
+        // 프리셋 삭제 함수
         private void deletePreset_Click(object sender, EventArgs e)
         {
-            // 버튼 클릭 시 선택된 txt 파일 삭제
-            DeleteSelectedTxtFolder();
+            try
+            {
+                foreach (DataGridViewRow row in dataGridView2.Rows)
+                {
+                    (row.Cells[1].Value as System.Drawing.Image).Dispose();
+                }
+                dataGridView2.Rows.Clear();
+
+                // 폴더 내의 모든 파일과 하위 폴더를 삭제
+                Directory.Delete(folderPath, true);
+                MessageBox.Show("폴더가 삭제되었습니다.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("오류가 발생했습니다: " + ex.Message);
+            }
         }
-        ///////프리셋 삭제 기능.///////////////
 
         // 프로세스를 새로고침 하는 버튼의 이벤트
         private void btnProcessRefresh_Click(object sender, EventArgs e)
@@ -414,6 +434,7 @@ namespace UEP
                 string filePath = Path.Combine(exeDirectory, modifiedFile + "\\" + selectedFile);
                 Console.WriteLine(filePath);
 
+                folderPath = Path.Combine(exeDirectory, modifiedFile);
                 selectFile = filePath;
 
                 List<string> processInfoLines = new List<string>(); // 프로세스 정보를 저장할 리스트
@@ -450,7 +471,7 @@ namespace UEP
             {
                 // line 변수에 저장된 텍스트를 "//" 기준으로 분할
                 string[] data = line.Split(new string[] { "//" }, StringSplitOptions.None);
-                
+
 
                 // DataGridViewRow 객체 생성
                 DataGridViewRow row = new DataGridViewRow();
@@ -476,9 +497,9 @@ namespace UEP
                 for (int i = 2; i < row.Cells.Count; i++)
                 {
                     // data 배열의 길이를 초과하지 않도록 조건 확인
-                    if (i < data.Length+1)
+                    if (i < data.Length + 1)
                     {
-                        row.Cells[i].Value = data[i-1];
+                        row.Cells[i].Value = data[i - 1];
                     }
                 }
 
@@ -486,6 +507,8 @@ namespace UEP
                 dataGridView2.Rows.Add(row);
                 UpdateOrderColumn();
             }
+
+            //PrintGridViewData(dataGridView2); //단순하게 콘솔에 출력해서 확인하는 용도
         }
 
 
@@ -519,68 +542,30 @@ namespace UEP
         }
 
 
-
+        // 프로세스의 경로를 텍스트 파일에 저장하는 함수 (프로세스 정보는 함수로 뺌)
         public void SaveProcessPathToFile(string filePath, DataGridView gridView2)
         {
             using (StreamWriter sw = new StreamWriter(filePath, false))
             {
                 foreach (DataGridViewRow row in gridView2.Rows)
                 {
-                    if (row.Cells["App Name"].Value != null) // "App Name"은 메인 윈도우 타이틀이 표시되는 컬럼의 이름입니다.
+                    if (row.Cells["App Name"].Value != null)
                     {
-                        string windowTitle = row.Cells["App Name"].Value.ToString();
+                        string appName = row.Cells["App Name"].Value.ToString();
+                        string processName = row.Cells["Process Name"].Value.ToString();
+                        string x = row.Cells["X"].Value.ToString();
+                        string y = row.Cells["Y"].Value.ToString();
+                        string width = row.Cells["Width"].Value.ToString();
+                        string height = row.Cells["Height"].Value.ToString();
+                        string state = row.Cells["State"].Value.ToString();
+                        string processPath = row.Cells["ExePath"].Value?.ToString(); // 얘가 실행파일 경로
 
-                        // 시스템에서 실행 중인 모든 프로세스를 가져옵니다.
-                        Process[] processes = Process.GetProcesses();
-
-                        foreach (Process prs in processes)
-                        {
-                            // 메인 윈도우 타이틀이 사용자가 지정한 값과 일치하는지 확인합니다.
-                            if (prs.MainWindowTitle == windowTitle)
-                            {
-                                try
-                                {
-                                    string processPath = prs.MainModule.FileName;
-                                    if(processPath != null)
-                                    {
-                                        sw.WriteLine($"{processPath}");
-                                    }
-                                    
-                                    //WriteProcessPathToFile(prs, sw);
-
-
-                                    break; // 일치하는 첫 번째 프로세스를 찾았으므로 반복을 중단합니다.
-                                }
-                                catch (Exception ex)
-                                {
-                                    // 접근할 수 없는 프로세스는 "접근 불가"로 표시합니다.
-                                    sw.WriteLine($"WindowTitle: {windowTitle}, 경로: 접근 불가 - {ex.Message}");
-
-
-                                }
-                            }
-                        }
-                        // 프로세스의 행 정보를 파일에 추가합니다.
-                        WriteProcessRowToFile(row, sw);
-                        sw.WriteLine($"\n");
+                        sw.WriteLine(processPath); // 실행파일 경로 먼저
+                        sw.WriteLine($"//{appName}//{processName}//{x}//{y}//{width}//{height}//{state}//{processPath}"); // 프로세스 정보
+                        sw.WriteLine(); // 한칸 띄기
                     }
                 }
             }
-        }
-
-
-        // 프로세스의 행 정보를 파일에 추가하는 함수
-        public void WriteProcessRowToFile(DataGridViewRow row, StreamWriter sw)
-        {
-            string appName = row.Cells["App Name"].Value.ToString();
-            string processName = row.Cells["Process Name"].Value.ToString();
-            string x = row.Cells["X"].Value.ToString();
-            string y = row.Cells["Y"].Value.ToString();
-            string width = row.Cells["Width"].Value.ToString();
-            string height = row.Cells["Height"].Value.ToString();
-            string state = row.Cells["State"].Value.ToString();
-
-            sw.WriteLine($"//{appName}//{processName}//{x}//{y}//{width}//{height}//{state}");
         }
 
 
@@ -611,7 +596,6 @@ namespace UEP
                 }
             }
         }
-
 
 
         // 저장 버튼을 누르면 프로세스의 경로가 텍스트 파일 형태로 저장되는 함수
@@ -660,65 +644,124 @@ namespace UEP
         }
 
 
-
-        // 실행파일의 경로를 참조하여 파일을 실행시키는 함수
-        // 실험함수임. 나중에 프리셋 기능에 추가 필요
+        // 실행버튼을 누르면 텍스트파일을 읽어오는 함수
         private void btnRunPath_Click(object sender, EventArgs e)
         {
-            try
+            using (StreamReader sr = new StreamReader(selectFile))
             {
-                // 파일에서 각 줄을 읽어온다.
-                string[] applicationPaths = File.ReadAllLines(selectFile);
-                int blankLineCount = 0;
-
-                foreach (string appPath in applicationPaths)
+                string processPath;
+                while ((processPath = sr.ReadLine()) != null)
                 {
-                    // 공백 행인지 확인
-                    if (string.IsNullOrWhiteSpace(appPath))
+                    if (!string.IsNullOrEmpty(processPath))
                     {
-                        blankLineCount++;
-                    }
-                    else
-                    {
-                        // 공백이 아닌 행을 찾으면 공백 행 카운트를 초기화
-                        blankLineCount = 0;
-                    }
-
-                    // 공백 행이 3개가 되면 다른 작업 수행
-                    if (blankLineCount == 3)
-                    {
-                        PerformOtherTask();
-                        break;
-                    }
-
-                    // 공백 행이 3개가 아닐 때만 애플리케이션 실행
-                    if (blankLineCount < 3)
-                    {
-                        ProcessStartInfo psi = new ProcessStartInfo()
+                        Process process = Process.Start(new ProcessStartInfo
                         {
-                            FileName = appPath,
-                            UseShellExecute = true // Shell을 사용하여 파일 실행
-                        };
+                            FileName = processPath,
+                            UseShellExecute = true
+                        });
 
-                        // 애플리케이션 실행
-                        Process.Start(psi);
+                        //process.WaitForInputIdle(); // 프로세스 창이 완전히 열릴 때까지 기다림
+                        Thread.Sleep(300);
+
+                        string processInfo = sr.ReadLine(); // 프로세스 정보 읽기
+                        UpdateProcessInfo(process, processInfo);
+                        sr.ReadLine(); // 빈 줄 건너뛰기
                     }
                 }
             }
-            catch (Exception ex)
+        }
+
+        
+        // 프로세스 이름으로 윈도우 창 핸들러 찾는 함수
+        public static IntPtr GetWindowHandleByProcessName(string processName)
+        {
+            IntPtr windowHandle = IntPtr.Zero;
+
+            foreach (Process p in Process.GetProcessesByName(processName))
             {
-                // 오류 처리
-                Console.WriteLine($"An error occurred: {ex.Message}");
+                foreach (ProcessThread thread in p.Threads)
+                {
+                    EnumThreadWindows(thread.Id, (hWnd, lParam) =>
+                    {
+                        uint processId;
+                        GetWindowThreadProcessId(hWnd, out processId);
+                        if (processId == (uint)p.Id)
+                        {
+                            windowHandle = hWnd;
+                            return false; // 윈도우 핸들을 찾았으므로 열거 중단
+                        }
+                        return true;
+                    }, IntPtr.Zero);
+
+                    if (windowHandle != IntPtr.Zero)
+                        break; // 윈도우 핸들을 찾았으므로 프로세스 열거 중단
+                }
+            }
+
+            return windowHandle;
+        }
+
+
+        // 프로그램 실행 후, 윈도우 창의 위치, 크기, 상태를 조절하는 함수
+        private void UpdateProcessInfo(Process process, string processInfo)
+        {
+            
+            if (process != null)
+            {
+                string[] info = processInfo.Split("//");
+
+                if (info.Length == 9)
+                {
+                    int x = int.Parse(info[3]);
+                    int y = int.Parse(info[4]);
+                    int width = int.Parse(info[5]);
+                    int height = int.Parse(info[6]);
+                    string state = info[7]; // 상태 값
+
+                    string name = info[2];
+
+
+                    Console.WriteLine(" //x축 : "+x+" //y축 : "+y+" //길이 : "+width+" //높이 : "+height+" //상태 : "+state);
+
+
+                    Process[] processes = Process.GetProcessesByName(name);
+                    Process p = processes[0];
+
+                    List<IntPtr> handles = new List<IntPtr>();
+
+                    foreach (ProcessThread thread in p.Threads)
+                    {
+                        EnumThreadWindows(thread.Id, (hWnd, lParam) => { handles.Add(hWnd); return true; }, IntPtr.Zero);
+                        
+                    }
+
+                    var processName = name;
+                    var windowHandles = GetWindowHandleByProcessName(name); // 이게 진짜임 이게 진짜 핸들러임
+
+                    Console.WriteLine("프로세스이름 : " + processName);
+                    Console.WriteLine("핸들러 : " + windowHandles);
+
+
+
+                    // 프로세스 창 크기 변경
+                    SetWindowPos(windowHandles, IntPtr.Zero, x, y, width, height, 0);
+
+                    // 프로세스 창 상태 변경
+                    switch (state)
+                    {
+                        case "Min":
+                            ShowWindow(windowHandles, 6); // SW_MINIMIZE
+                            break;
+                        case "Normal":
+                            ShowWindow(windowHandles, 1); // SW_SHOWNORMAL
+                            break;
+                        case "Max":
+                            ShowWindow(windowHandles, 3); // SW_MAXIMIZE
+                            break;
+                    }
+                }
             }
         }
-
-        private void PerformOtherTask()
-        {
-            // 공백 행이 3개가 나온 후 수행할 작업
-            Console.WriteLine("Performing other tasks...");
-            // 여기에 다른 작업을 구현하세요.
-        }
-
 
 
         // 1번 뷰의 행을 더블클릭 하면 2번 뷰로 정보를 옮기는 함수
@@ -757,9 +800,6 @@ namespace UEP
                     }
                 }
 
-
-
-
                 // 중복되지 않은 경우에만 새 행을 추가합니다.
                 if (!isDuplicate)
                 {
@@ -791,18 +831,16 @@ namespace UEP
                     }
 
                     // 'App Name'이 실행 중인 프로세스의 'WindowTitle'과 일치하지 않는 경우, 행을 분홍색으로 색칠합니다.
-                    if (!isAppNameMatched)
-                    {
+                    //if (!isAppNameMatched)
+                    //{
 
-                        dataGridView2.Rows[newRow].DefaultCellStyle.BackColor = Color.Pink;
-                    }
+                    //    dataGridView2.Rows[newRow].DefaultCellStyle.BackColor = Color.Pink;
+                    //}
 
                     // 추가된 행의 순서를 설정합니다.
                     UpdateOrderColumn();
                 }
-
             }
-
         }
 
 
@@ -854,10 +892,7 @@ namespace UEP
             }
         }
 
-
-
-
-
+        
 
         private void SaveIconFromWindow(IntPtr hWnd, string windowTitle)
         {
@@ -880,6 +915,8 @@ namespace UEP
             }
         }
 
+
+        // 그리드뷰1에 아이콘을 가져오는 함수
         private void ExtractAndAddIconToImageList(string filePath, string windowTitle)
         {
             IntPtr largeIcon, smallIcon;
@@ -892,7 +929,6 @@ namespace UEP
                     // 선택적으로, windowTitle을 사용하여 각 이미지에 키를 할당할 수 있습니다.
                     // 예: imageList.Images.Add(windowTitle, icon.ToBitmap());
 
-                    Console.WriteLine($"Icon added to ImageList: {windowTitle}");
                 }
 
                 // 아이콘 핸들 정리
@@ -902,6 +938,7 @@ namespace UEP
         }
 
 
+        // 그리드뷰1에 프로세스 정보를 가져오는 함수
         private bool EnumWindowsCallback(IntPtr hWnd, IntPtr lParam)
         {
 
@@ -989,13 +1026,14 @@ namespace UEP
 
                     dataGridView1.Rows.Add(row);
 
-                    Console.WriteLine($"Handle: {hWnd}, Title: {sb}, Process Name: {processName}, X: {rect.Left}, Y: {rect.Top}, Width: {rect.Right - rect.Left}, Height: {rect.Bottom - rect.Top}, State: {windowState}");
+                    //Console.WriteLine($"Handle: {hWnd}, Title: {sb}, Process Name: {processName}, X: {rect.Left}, Y: {rect.Top}, Width: {rect.Right - rect.Left}, Height: {rect.Bottom - rect.Top}, State: {windowState}");
                 }
             }
             return true; // Return true to continue enumerating the next window
         }
 
 
+        // 최초에 프로그램을 시작하면 그리드뷰1에 정보를 가져오는 함수
         private void LoadProcesses()
         {
             dataGridView1.Rows.Clear(); // DataGridView 내용을 클리어
@@ -1134,6 +1172,18 @@ namespace UEP
                     MessageBox.Show("마우스 속도를 변경할 수 없습니다.");
                 }
             }
+        }
+    }
+    public class ProcessUtility
+    {
+        [DllImport("user32.dll")]
+        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+        public static Process GetProcessByHandle(IntPtr handle)
+        {
+            uint processId;
+            GetWindowThreadProcessId(handle, out processId);
+            return Process.GetProcessById((int)processId);
         }
     }
 }
