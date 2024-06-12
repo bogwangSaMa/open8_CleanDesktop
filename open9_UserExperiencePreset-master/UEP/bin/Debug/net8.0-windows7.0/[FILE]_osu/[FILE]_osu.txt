@@ -1,0 +1,15 @@
+C:\Users\qhrhk\Desktop\osu\pp카운터.lnk
+//pp카운터//WindowsTerminal//0//0//0//0//Min//C:\Users\qhrhk\Desktop\osu\pp카운터.lnk
+
+C:\ALLFILE\게임\OSU!\확장프로그램\트레이너\osu-trainer-v1.8.0\osu-trainer.exe
+//osu trainer 1.8.0//osu-trainer//14//6//427//493//Normal//C:\ALLFILE\게임\OSU!\확장프로그램\트레이너\osu-trainer-v1.8.0\osu-trainer.exe
+
+C:\ALLFILE\게임\OSU!\확장프로그램\에임 확인\OsuMissAnalyzer\OsuMissAnalyzer.exe
+//Miss Analyzer//OsuMissAnalyzer//435//12//331//308//Normal//C:\ALLFILE\게임\OSU!\확장프로그램\에임 확인\OsuMissAnalyzer\OsuMissAnalyzer.exe
+
+C:\Users\qhrhk\AppData\Local\osu!\osu!.exe
+//osu!//osu!//317//141//1926//1109//Normal//C:\Users\qhrhk\AppData\Local\osu!\osu!.exe
+
+C:\ALLFILE\게임\OSU!\확장프로그램\감마 조절\o!gmc\o!gmc.exe
+//o!gmc//o!gmc//14//1178//484//197//Normal//C:\ALLFILE\게임\OSU!\확장프로그램\감마 조절\o!gmc\o!gmc.exe
+
