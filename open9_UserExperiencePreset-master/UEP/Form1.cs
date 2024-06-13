@@ -74,6 +74,57 @@ namespace UEP
         [DllImport("user32.dll")]
         private static extern int ShowCursor(bool bShow);
 
+        // 디스플레이 밝기 조절 관련 API
+        [DllImport("Dxva2.dll", EntryPoint = "GetMonitorBrightness")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GetMonitorBrightness(IntPtr hMonitor, out int pdwMinimumBrightness, out int pdwCurrentBrightness, out int pdwMaximumBrightness);
+
+        [DllImport("Dxva2.dll", EntryPoint = "SetMonitorBrightness")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool SetMonitorBrightness(IntPtr hMonitor, int dwNewBrightness);
+
+        [DllImport("Dxva2.dll", EntryPoint = "GetPhysicalMonitorsFromHMONITOR")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GetPhysicalMonitorsFromHMONITOR(IntPtr hMonitor, uint dwPhysicalMonitorArraySize, [Out] PHYSICAL_MONITOR[] pPhysicalMonitorArray);
+
+        private bool isFirstOrientationChange = true;
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+
+        
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        private struct PHYSICAL_MONITOR
+        {
+            public IntPtr hPhysicalMonitor;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+            public string szPhysicalMonitorDescription;
+        }
+
+        // 모니터 방향 회전 관련 API
+        [DllImport("user32.dll", CharSet = CharSet.Ansi)]
+        private static extern int ChangeDisplaySettingsEx(string lpszDeviceName, ref DEVMODE lpDevMode, IntPtr hwnd, uint dwflags, IntPtr lParam);
+
+        private const int ENUM_CURRENT_SETTINGS = -1;
+        private const int CDS_UPDATEREGISTRY = 0x00000001;
+        private const int CDS_RESET = 0x40000000;
+        private const int DISP_CHANGE_SUCCESSFUL = 0;
+        private const int DM_DISPLAYORIENTATION = 0x80;
+        private const int DM_PELSWIDTH = 0x80000;
+        private const int DM_PELSHEIGHT = 0x100000;
+
+        [DllImport("user32.dll")]
+        private static extern int EnumDisplaySettings(string deviceName, int modeNum, ref DEVMODE devMode);
+        [DllImport("gdi32.dll")]
+        private static extern bool SetDeviceGammaRamp(IntPtr hdc, short[] ramp);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetDC(IntPtr hWnd);
+
+        private const int GAMMA_RAMP_SIZE = 256;
+
+        private const int PHYSICALWIDTH = 110;
+        private const int PHYSICALHEIGHT = 111;
 
         const uint PROCESS_QUERY_INFORMATION = 0x0400;
         const uint PROCESS_VM_READ = 0x0010;
@@ -104,6 +155,50 @@ namespace UEP
             public POINT MaxPosition;
             public RECT NormalPosition;
         }
+        // DEVMODE 구조체
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
+        public struct DEVMODE
+        {
+            private const int CCHDEVICENAME = 32;
+            private const int CCHFORMNAME = 32;
+
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = CCHDEVICENAME)]
+            public string dmDeviceName;
+            public ushort dmSpecVersion;
+            public ushort dmDriverVersion;
+            public ushort dmSize;
+            public ushort dmDriverExtra;
+            public int dmFields;
+
+            public int dmPositionX;
+            public int dmPositionY;
+            public ScreenOrientation dmDisplayOrientation;
+            public int dmDisplayFixedOutput;
+
+            public short dmColor;
+            public short dmDuplex;
+            public short dmYResolution;
+            public short dmTTOption;
+            public short dmCollate;
+
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = CCHFORMNAME)]
+            public string dmFormName;
+            public short dmLogPixels;
+            public int dmBitsPerPel;
+            public int dmPelsWidth;
+            public int dmPelsHeight;
+            public int dmDisplayFlags;
+            public int dmNup;
+            public int dmDisplayFrequency;
+        }
+
+        public enum ScreenOrientation
+        {
+            DMDO_DEFAULT = 0,
+            DMDO_90 = 1,
+            DMDO_180 = 2,
+            DMDO_270 = 3
+        }
 
         private DataGridView dataGridView1; // 상단에 프로세스 정보 출력
         private DataGridView dataGridView2; // 하단에 프로세스 정보 출력
@@ -119,6 +214,7 @@ namespace UEP
         private TabControl tabControl1;
         private TabPage tabPage1;
 
+        // 마우스 컨트롤 탭에 관련한 초기화
         TrackBar trackBarMouseSpeed;
         TextBox txtSpeedValue;
         CheckBox chkInvertMouse;
@@ -129,6 +225,14 @@ namespace UEP
         CheckBox chkHideCursor;
         TrackBar trackBarWheelSensitivity;
         TextBox txtWheelSensitivityValue;
+
+
+        // 모니터 컨트롤 탭에 관련한 초기화
+        private ScreenOrientation currentOrientation;
+        TrackBar trackBarBrightness;
+        TextBox txtBrightnessValue;
+        ComboBox comboOrientation;
+        
 
 
 
@@ -311,6 +415,9 @@ namespace UEP
 
             // Mouse tab UI 요소 추가
             InitializeMouseTabComponents(tabPage2);
+
+            // Monitor tab UI 요소 추가
+            InitializeMonitorTabComponents(tabPage3);
         }
 
 
@@ -1061,55 +1168,55 @@ namespace UEP
 
         // 마우스 세팅값을 저장하는 함수
         private void SaveSettings(string filePath)
-         {
-             try
-             {
-                 using (StreamWriter writer = new StreamWriter(filePath))
-                 {
-                     if (trackBarMouseSpeed != null)
-                     {
-                         writer.WriteLine($"MouseSpeed={trackBarMouseSpeed.Value}");
-                     }
-                     else
-                     {
-                         MessageBox.Show("trackBarMouseSpeed is null");
-                     }
+        {
+            try
+            {
+                using (StreamWriter writer = new StreamWriter(filePath))
+                {
+                    if (trackBarMouseSpeed != null)
+                    {
+                        writer.WriteLine($"MouseSpeed={trackBarMouseSpeed.Value}");
+                    }
+                    else
+                    {
+                        MessageBox.Show("trackBarMouseSpeed is null");
+                    }
 
-                     if (trackBarWheelSensitivity != null)
-                     {
-                         writer.WriteLine($"WheelSensitivity={trackBarWheelSensitivity.Value}");
-                     }
-                     else
-                     {
-                         MessageBox.Show("trackBarWheelSensitivity is null");
-                     }
+                    if (trackBarWheelSensitivity != null)
+                    {
+                        writer.WriteLine($"WheelSensitivity={trackBarWheelSensitivity.Value}");
+                    }
+                    else
+                    {
+                        MessageBox.Show("trackBarWheelSensitivity is null");
+                    }
 
-                     if (chkInvertMouse != null)
-                     {
-                         writer.WriteLine($"InvertMouse={chkInvertMouse.Checked}");
-                     }
-                     else
-                     {
-                         MessageBox.Show("chkInvertMouse is null");
-                     }
+                    if (chkInvertMouse != null)
+                    {
+                        writer.WriteLine($"InvertMouse={chkInvertMouse.Checked}");
+                    }
+                    else
+                    {
+                        MessageBox.Show("chkInvertMouse is null");
+                    }
 
-                     if (chkHideCursor != null)
-                     {
-                         writer.WriteLine($"HideCursor={chkHideCursor.Checked}");
-                     }
-                     else
-                     {
-                         MessageBox.Show("chkHideCursor is null");
-                     }
-                 }
-                 MessageBox.Show("설정을 저장했습니다.");
-             }
-             catch (Exception ex)
-             {
-                 MessageBox.Show($"설정 저장 중 오류 발생: {ex.Message}");
-             }
-         }
-       
+                    if (chkHideCursor != null)
+                    {
+                        writer.WriteLine($"HideCursor={chkHideCursor.Checked}");
+                    }
+                    else
+                    {
+                        MessageBox.Show("chkHideCursor is null");
+                    }
+                }
+                MessageBox.Show("설정을 저장했습니다.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"설정 저장 중 오류 발생: {ex.Message}");
+            }
+        }
+
 
         private void InitializeMouseTabComponents(TabPage tabPageMouse) // 전체적인 마우스 탭 관리
         {
@@ -1208,25 +1315,6 @@ namespace UEP
             tabPageMouse.Controls.Add(btnLoadSettings);
         }
 
-        /* private void SaveSettings(string filePath)
-        {
-            try
-            {
-                using (StreamWriter writer = new StreamWriter(filePath))
-                {
-                    writer.WriteLine($"MouseSpeed={trackBarMouseSpeed?.Value}");
-                    writer.WriteLine($"WheelSensitivity={trackBarWheelSensitivity?.Value}");
-                    writer.WriteLine($"InvertMouse={chkInvertMouse?.Checked}");
-                    writer.WriteLine($"HideCursor={chkHideCursor?.Checked}");
-                }
-                MessageBox.Show("설정을 저장했습니다.");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"설정 저장 중 오류 발생: {ex.Message}");
-            }
-        } */
-
         private void LoadSettings(string filePath)
         {
             try
@@ -1276,7 +1364,8 @@ namespace UEP
             }
         }
 
-    private void HideCursor(object sender, EventArgs e) // 커서 숨기기
+        // 커서를 숨기는 함수
+        private void HideCursor(object sender, EventArgs e)
         {
             CheckBox chk = sender as CheckBox;
             if (chk != null)
@@ -1289,22 +1378,29 @@ namespace UEP
                 }
             }
         }
+
+        // 마우스 휠 감도 값을 전달하는 함수
         private void TrackBarWheelSensitivity_ValueChanged(object sender, EventArgs e)
         {
             int sensitivity = trackBarWheelSensitivity.Value;
             SetWheelSensitivity(sensitivity);
             txtWheelSensitivityValue.Text = sensitivity.ToString();
         }
+
+        // Windows API를 가져와 마우스 휠 감도를 조절하는 함수
         private void SetWheelSensitivity(int sensitivity)
         {
             SystemParametersInfo(SPI_SETWHEELSCROLLLINES, (uint)sensitivity, IntPtr.Zero, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
         }
+
+        // 마우스 휠 감도를 가져오는 함수 (아마도)
         private int GetMouseWheelScrollLines()
         {
             SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, IntPtr.Zero, 0, out uint lines);
             return Math.Max((int)lines, trackBarWheelSensitivity.Minimum); // 범위 안의 값이 되도록 보장
         }
 
+        // 마우스 속도의 값을 전달하는 함수
         private void TrackBarMouseSpeed_ValueChanged(object sender, EventArgs e)
         {
             TrackBar trackBar = sender as TrackBar;
@@ -1318,6 +1414,8 @@ namespace UEP
                 mouseControl.SetMouseSpeed(trackBar.Value);
             }
         }
+
+        // 커서를 숨기는데 필요한 함수
         private void OnInactivityTimerElapsed(object sender, ElapsedEventArgs e)
         {
             if (enableHideCursor && !isCursorHidden)
@@ -1336,6 +1434,8 @@ namespace UEP
                 }
             }
         }
+
+        // 커서를 숨기는데 움직임을 감지하는 함수
         private void HookManager_MouseMove(object sender, MouseEventArgs e)
         {
             if (isCursorHidden)
@@ -1346,6 +1446,8 @@ namespace UEP
             inactivityTimer.Stop();
             inactivityTimer.Start();
         }
+
+        // 커서를 숨기는 훅 이벤트를 종료하는 함수 (프로그램 종료할 때 같이 꺼짐)
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             base.OnFormClosing(e);
@@ -1353,6 +1455,8 @@ namespace UEP
             HookManager.Stop();
             inactivityTimer.Dispose();
         }
+
+        // 마우스 버튼 반전 함수
         private void InvertMouse(object sender, EventArgs e)
         {
             CheckBox chk = sender as CheckBox;
@@ -1373,6 +1477,7 @@ namespace UEP
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool SystemParametersInfo(uint uiAction, uint uiParam, IntPtr pvParam, uint fWinIni, out uint pvParamOut);
 
+        // 마우스 컨트롤이라고 새로 만들었는데 쓰긴 쓰는데 최적화 할려면 할 수 있음
         public class MouseControl
         {
             // SystemParametersInfo 함수를 호출하기 위한 상수 및 DLLImport 선언
@@ -1391,7 +1496,227 @@ namespace UEP
                 }
             }
         }
+        // 모니터 탭 관리
+        private void InitializeMonitorTabComponents(TabPage tabPageMonitor)
+        {
+            // Monitor brightness control
+            System.Windows.Forms.Label lblBrightness = new System.Windows.Forms.Label();
+            lblBrightness.Text = "모니터 밝기 조절:";
+            lblBrightness.Location = new Point(20, 20);
+            lblBrightness.Size = new Size(120, 20);
+
+            trackBarBrightness = new TrackBar();
+            trackBarBrightness.Location = new Point(150, 20);
+            trackBarBrightness.Size = new Size(250, 45);
+            trackBarBrightness.Minimum = 0;
+            trackBarBrightness.Maximum = 100;
+            trackBarBrightness.TickFrequency = 10;
+            trackBarBrightness.ValueChanged += (sender, e) =>
+            {
+                txtBrightnessValue.Text = trackBarBrightness.Value.ToString();
+                SetMonitorBrightness(trackBarBrightness.Value);
+            };
+
+            txtBrightnessValue = new TextBox();
+            txtBrightnessValue.ReadOnly = true;
+            txtBrightnessValue.Location = new Point(410, 20);
+            txtBrightnessValue.Size = new Size(50, 20);
+            txtBrightnessValue.TextAlign = HorizontalAlignment.Center;
+            txtBrightnessValue.Text = trackBarBrightness.Value.ToString();
+
+            // Monitor orientation control
+            System.Windows.Forms.Label lblOrientation = new System.Windows.Forms.Label();
+            lblOrientation.Text = "모니터 화면 회전:";
+            lblOrientation.Location = new Point(20, 80);
+            lblOrientation.Size = new Size(120, 20);
+
+            ComboBox comboOrientation = new ComboBox();
+            comboOrientation.Location = new Point(150, 80);
+            comboOrientation.Size = new Size(250, 20);
+            comboOrientation.Items.AddRange(new string[] { "기본", "90도 회전", "180도 회전", "270도 회전" });
+            comboOrientation.SelectedIndexChanged += (sender, e) =>
+            {
+                currentOrientation = (ScreenOrientation)comboOrientation.SelectedIndex;
+                SetMonitorOrientation(currentOrientation);
+            };
+            comboOrientation.SelectedIndex = 0; // 초기값 설정
+
+
+
+
+            /*// 모니터 설정 저장 (굳이 필요 없어서 주석처리)
+            Button btnSaveMonitorSettings = new Button();
+            btnSaveMonitorSettings.Text = "Save Settings";
+            btnSaveMonitorSettings.Location = new Point(20, 180);
+            btnSaveMonitorSettings.Click += (sender, e) => SaveMonitorSettings("monitor_settings.txt");
+
+            Button btnLoadMonitorSettings = new Button();
+            btnLoadMonitorSettings.Text = "Load Settings";
+            btnLoadMonitorSettings.Location = new Point(150, 180);
+            btnLoadMonitorSettings.Click += (sender, e) => LoadMonitorSettings("monitor_settings.txt");*/
+
+            // Add controls to the tab
+            tabPageMonitor.Controls.Add(lblBrightness);
+            tabPageMonitor.Controls.Add(trackBarBrightness);
+            tabPageMonitor.Controls.Add(txtBrightnessValue);
+            tabPageMonitor.Controls.Add(lblOrientation);
+            tabPageMonitor.Controls.Add(comboOrientation);
+
+            /*tabPageMonitor.Controls.Add(btnSaveMonitorSettings);
+            tabPageMonitor.Controls.Add(btnLoadMonitorSettings);*/
+
+            tabPageMonitor.Controls.Add(lblBrightness);
+            tabPageMonitor.Controls.Add(trackBarBrightness);
+            tabPageMonitor.Controls.Add(txtBrightnessValue);
+        }
+        // Apply brightness setting
+        private void SetMonitorBrightness(int brightness)
+        {
+            IntPtr hMonitor = MonitorFromWindow(this.Handle, 0);
+            if (hMonitor == IntPtr.Zero)
+            {
+                MessageBox.Show("Failed to get monitor handle.");
+                return;
+            }
+
+            PHYSICAL_MONITOR[] physicalMonitors = new PHYSICAL_MONITOR[1];
+            if (!GetPhysicalMonitorsFromHMONITOR(hMonitor, (uint)physicalMonitors.Length, physicalMonitors))
+            {
+                MessageBox.Show("Failed to get physical monitor.");
+                return;
+            }
+
+            IntPtr hPhysicalMonitor = physicalMonitors[0].hPhysicalMonitor;
+            if (!SetMonitorBrightness(hPhysicalMonitor, brightness))
+            {
+                MessageBox.Show("Failed to set monitor brightness.");
+            }
+            else
+            {
+            }
+        }
+
+        // Apply orientation setting
+        private void SetMonitorOrientation(ScreenOrientation orientation)
+        {
+            DEVMODE dm = new DEVMODE();
+            dm.dmSize = (ushort)Marshal.SizeOf(typeof(DEVMODE));
+
+            // 현재 디스플레이 설정을 가져옵니다.
+            if (EnumDisplaySettings(null, ENUM_CURRENT_SETTINGS, ref dm) != 0)
+            {
+                // 90도 또는 270도 회전일 경우, 너비와 높이를 교환합니다.
+                if (orientation == ScreenOrientation.DMDO_90 || orientation == ScreenOrientation.DMDO_270)
+                {
+                    if (dm.dmDisplayOrientation == ScreenOrientation.DMDO_DEFAULT || dm.dmDisplayOrientation == ScreenOrientation.DMDO_180)
+                    {
+                        int temp = dm.dmPelsWidth;
+                        dm.dmPelsWidth = dm.dmPelsHeight;
+                        dm.dmPelsHeight = temp;
+                    }
+                }
+                else
+                {
+                    if (dm.dmDisplayOrientation == ScreenOrientation.DMDO_90 || dm.dmDisplayOrientation == ScreenOrientation.DMDO_270)
+                    {
+                        int temp = dm.dmPelsWidth;
+                        dm.dmPelsWidth = dm.dmPelsHeight;
+                        dm.dmPelsHeight = temp;
+                    }
+                }
+
+                dm.dmDisplayOrientation = orientation;
+                dm.dmFields |= DM_DISPLAYORIENTATION | DM_PELSWIDTH | DM_PELSHEIGHT;
+
+                int result = ChangeDisplaySettingsEx(null, ref dm, IntPtr.Zero, CDS_UPDATEREGISTRY | CDS_RESET, IntPtr.Zero);
+
+                if (!isFirstOrientationChange)
+                {
+                    if (result != DISP_CHANGE_SUCCESSFUL)
+                    {
+                        MessageBox.Show("모니터 회전에 실패했습니다.");
+                    }
+                    else
+                    {
+                        MessageBox.Show("모니터 회전이 성공했습니다.");
+                    }
+                }
+                else
+                {
+                    isFirstOrientationChange = false; // 처음 변경 완료 후에는 초기화
+                }
+            }
+            else
+            {
+                MessageBox.Show("Failed to retrieve display settings.");
+            }
+        }
+
+        // 모니터 설정들 저장하는 함순데 굳이 필요 없어서 일단 주석처리
+        /*private void SaveMonitorSettings(string filePath)
+        {
+            try
+            {
+                using (StreamWriter writer = new StreamWriter(filePath))
+                {
+                    writer.WriteLine($"MonitorBrightness={trackBarBrightness.Value}");
+                    writer.WriteLine($"MonitorOrientation={(int)currentOrientation}");
+                    writer.WriteLine($"ColorFilter={chkColorFilter.Checked}");
+                }
+                MessageBox.Show("Monitor settings saved.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error saving monitor settings: {ex.Message}");
+            }
+        }*/
+
+        /*private void LoadMonitorSettings(string filePath)
+        {
+            try
+            {
+                if (File.Exists(filePath))
+                {
+                    string[] lines = File.ReadAllLines(filePath);
+                    foreach (string line in lines)
+                    {
+                        string[] parts = line.Split('=');
+                        if (parts.Length == 2)
+                        {
+                            string key = parts[0];
+                            string value = parts[1];
+
+                            switch (key)
+                            {
+                                case "MonitorBrightness":
+                                    trackBarBrightness.Value = int.Parse(value);
+                                    SetMonitorBrightness(trackBarBrightness.Value);
+                                    break;
+                                case "MonitorOrientation":
+                                    currentOrientation = (ScreenOrientation)Enum.Parse(typeof(ScreenOrientation), value);
+                                    SetMonitorOrientation(currentOrientation);
+                                    break;
+                                case "ColorFilter":
+                                    chkColorFilter.Checked = bool.Parse(value);
+                                    break;
+                            }
+                        }
+                    }
+                    MessageBox.Show("Monitor settings loaded.");
+                }
+                else
+                {
+                    MessageBox.Show("Settings file not found.");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading monitor settings: {ex.Message}");
+            }
+        }*/
     }
+
+    // 커서를 숨기는 훅 이벤트 총괄 
     public static class HookManager
     {
         // Hooking constants
@@ -1483,6 +1808,8 @@ namespace UEP
             public int y;
         }
     }
+
+    // 이건 뭐임??
     public class ProcessUtility
     {
         [DllImport("user32.dll")]
@@ -1495,4 +1822,5 @@ namespace UEP
             return Process.GetProcessById((int)processId);
         }
     }
+
 }
