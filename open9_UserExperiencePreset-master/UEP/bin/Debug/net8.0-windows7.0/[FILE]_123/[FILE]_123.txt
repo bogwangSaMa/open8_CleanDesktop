@@ -1,0 +1,15 @@
+C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe
+//UEP (실행) - Microsoft Visual Studio (관리자)//devenv//-8//-8//1936//1066//Max//C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe
+
+C:\Program Files (x86)\Google\Chrome\Application\chrome.exe
+//ChatGPT - Chrome//chrome//-8//-8//1936//1066//Max//C:\Program Files (x86)\Google\Chrome\Application\chrome.exe
+
+C:\WINDOWS\SystemApps\InputApp_cw5n1h2txyewy\WindowsInternal.ComposableShell.Experiences.TextInput.InputApp.exe
+//Microsoft Text Input Application//WindowsInternal.ComposableShell.Experiences.TextInput.InputApp//0//0//1920//1080//Normal//C:\WINDOWS\SystemApps\InputApp_cw5n1h2txyewy\WindowsInternal.ComposableShell.Experiences.TextInput.InputApp.exe
+
+C:\WINDOWS\Explorer.EXE
+//UEP//explorer//0//0//0//0//Min//C:\WINDOWS\Explorer.EXE
+
+C:\Users\user\AppData\Local\SceneBuilder\SceneBuilder.exe
+//Gluon Scene Builder//SceneBuilder//440//120//1040//689//Normal//C:\Users\user\AppData\Local\SceneBuilder\SceneBuilder.exe
+

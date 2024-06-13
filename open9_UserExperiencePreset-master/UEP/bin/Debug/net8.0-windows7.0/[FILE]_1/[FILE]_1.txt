@@ -1,0 +1,3 @@
+C:\Windows\ImmersiveControlPanel\SystemSettings.exe
+//설정//SystemSettings//0//1//1200//932//Normal//C:\Windows\ImmersiveControlPanel\SystemSettings.exe
+

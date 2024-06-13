@@ -1,0 +1,6 @@
+C:\Program Files\Google\Chrome\Application\chrome.exe
+//뤼튼 - Chrome//chrome//2684//92//1294//1273//Normal//C:\Program Files\Google\Chrome\Application\chrome.exe
+
+C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe
+//UEP - Microsoft Visual Studio (관리자)//devenv//846//116//1420//1254//Normal//C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe
+
