@@ -1,9 +1,0 @@
-C:\Users\qhrhk\AppData\Local\Discord\app-1.0.9147\Discord.exe
-C:\Users\qhrhk\AppData\Local\SourceTree\app-3.4.17\SourceTree.exe
-C:\Program Files\Google\Chrome\Application\chrome.exe
-
-
-
-//보광님의 그룹 - Discord//Discord//-32000//-32000//314//50//Min
-//Sourcetree//SourceTree//-32000//-32000//314//50//Min
-//뤼튼 - Chrome//chrome//-83//92//1468//1674//Normal

@@ -1,8 +1,0 @@
-C:\Program Files\Google\Chrome\Application\chrome.exe
-C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe
-
-
-
-//제목 없음 외 페이지 1개 - 개인 - Microsoft​ Edge//msedge//360//24//1230//1694//Normal
-//새 탭 - Chrome//chrome//-84//92//1470//1674//Normal
-//UEP - Microsoft Visual Studio//devenv//-13//-13//2906//1826//Max

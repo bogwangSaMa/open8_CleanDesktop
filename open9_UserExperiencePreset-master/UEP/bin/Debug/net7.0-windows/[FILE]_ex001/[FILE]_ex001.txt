@@ -1,9 +1,0 @@
-C:\Program Files\WindowsApps\Microsoft.Paint_11.2403.28.0_x64__8wekyb3d8bbwe\PaintApp\mspaint.exe
-C:\Windows\system32\ApplicationFrameHost.exe
-C:\Program Files\Google\Chrome\Application\chrome.exe
-
-
-
-//제목 없음 - 그림판//mspaint//115//407//2304//1440//Normal
-//계산기//ApplicationFrameHost//300//581//666//1078//Normal
-//3 - Google 검색 - Chrome//chrome//100//322//1472//1676//Normal
