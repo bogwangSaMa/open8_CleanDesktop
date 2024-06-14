@@ -1,3 +1,6 @@
-C:\Program Files\WindowsApps\NVIDIACorp.NVIDIAControlPanel_8.1.966.0_x64__56jybvy8sckqj\nvcplui.exe
-//NVIDIA 제어판//nvcplui//0//0//0//0//Min//C:\Program Files\WindowsApps\NVIDIACorp.NVIDIAControlPanel_8.1.966.0_x64__56jybvy8sckqj\nvcplui.exe
+C:\Program Files\Google\Chrome\Application\chrome.exe
+//뤼튼 - Chrome//chrome//2699//51//1803//1288//Normal//C:\Program Files\Google\Chrome\Application\chrome.exe
+
+C:\Program Files\Google\Chrome\Application\chrome.exe
+//새 탭 - Chrome//chrome//450//733//1803//365//Normal//C:\Program Files\Google\Chrome\Application\chrome.exe
 

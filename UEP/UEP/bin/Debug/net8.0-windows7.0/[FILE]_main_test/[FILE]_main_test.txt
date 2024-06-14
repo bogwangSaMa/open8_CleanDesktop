@@ -1,0 +1,15 @@
+C:\ALLFILE\게임\OSU!\확장프로그램\트레이너\osu-trainer-v1.8.0\osu-trainer.exe
+//osu trainer 1.8.0//osu-trainer//10//319//427//493//Normal//C:\ALLFILE\게임\OSU!\확장프로그램\트레이너\osu-trainer-v1.8.0\osu-trainer.exe
+
+C:\ALLFILE\게임\OSU!\확장프로그램\감마 조절\o!gmc\o!gmc.exe
+//o!gmc//o!gmc//22//843//484//197//Normal//C:\ALLFILE\게임\OSU!\확장프로그램\감마 조절\o!gmc\o!gmc.exe
+
+C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.20.11381.0_x64__8wekyb3d8bbwe\WindowsTerminal.exe
+//에임확인프로그램//WindowsTerminal//100//414//1129//635//Min//C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.20.11381.0_x64__8wekyb3d8bbwe\WindowsTerminal.exe
+
+C:\ALLFILE\게임\OSU!\확장프로그램\에임 확인\OsuMissAnalyzer\OsuMissAnalyzer.exe
+//Miss Analyzer//OsuMissAnalyzer//7//14//396//292//Normal//C:\ALLFILE\게임\OSU!\확장프로그램\에임 확인\OsuMissAnalyzer\OsuMissAnalyzer.exe
+
+C:\Program Files\Google\Chrome\Application\chrome.exe
+//새 탭 - Chrome//chrome//2552//-8//2576//1408//Max//C:\Program Files\Google\Chrome\Application\chrome.exe
+

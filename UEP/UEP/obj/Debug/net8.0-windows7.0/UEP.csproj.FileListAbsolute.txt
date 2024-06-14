@@ -32,3 +32,12 @@ C:\Users\dowon\Desktop\open9_UserExperiencePreset-master\UEP\UEP\obj\Debug\net8.
 C:\Users\dowon\Desktop\open9_UserExperiencePreset-master\UEP\UEP\obj\Debug\net8.0-windows7.0\UEP.genruntimeconfig.cache
 C:\Users\dowon\Desktop\open9_UserExperiencePreset-master\UEP\UEP\obj\Debug\net8.0-windows7.0\ref\UEP.dll
 C:\ALLFILE\PROJECT\UserExperiencePreset\UEP\UEP\obj\Debug\net8.0-windows7.0\UEP.Form2.resources
+C:\ALLFILE\PROJECT\UserExperiencePreset\UEP\UEP\bin\Debug\net8.0-windows7.0\NAudio.dll
+C:\ALLFILE\PROJECT\UserExperiencePreset\UEP\UEP\bin\Debug\net8.0-windows7.0\NAudio.Asio.dll
+C:\ALLFILE\PROJECT\UserExperiencePreset\UEP\UEP\bin\Debug\net8.0-windows7.0\NAudio.Core.dll
+C:\ALLFILE\PROJECT\UserExperiencePreset\UEP\UEP\bin\Debug\net8.0-windows7.0\NAudio.Midi.dll
+C:\ALLFILE\PROJECT\UserExperiencePreset\UEP\UEP\bin\Debug\net8.0-windows7.0\NAudio.Wasapi.dll
+C:\ALLFILE\PROJECT\UserExperiencePreset\UEP\UEP\bin\Debug\net8.0-windows7.0\NAudio.WinForms.dll
+C:\ALLFILE\PROJECT\UserExperiencePreset\UEP\UEP\bin\Debug\net8.0-windows7.0\NAudio.WinMM.dll
+C:\ALLFILE\PROJECT\UserExperiencePreset\UEP\UEP\obj\Debug\net8.0-windows7.0\UEP.csproj.AssemblyReference.cache
+C:\ALLFILE\PROJECT\UserExperiencePreset\UEP\UEP\obj\Debug\net8.0-windows7.0\UEP.csproj.Up2Date

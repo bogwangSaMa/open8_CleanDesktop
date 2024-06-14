@@ -1,3 +1,0 @@
-C:\Program Files\WindowsApps\NVIDIACorp.NVIDIAControlPanel_8.1.966.0_x64__56jybvy8sckqj\nvcplui.exe
-//NVIDIA 제어판//nvcplui//1248//612//974//718//Normal//C:\Program Files\WindowsApps\NVIDIACorp.NVIDIAControlPanel_8.1.966.0_x64__56jybvy8sckqj\nvcplui.exe
-
