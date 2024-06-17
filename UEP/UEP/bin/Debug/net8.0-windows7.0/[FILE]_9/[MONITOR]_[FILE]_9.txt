@@ -1,0 +1,2 @@
+MonitorBrightness=0
+MonitorOrientation=0

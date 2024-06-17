@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("UEP")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+243ba44d6e08a8a5e65e731f488a6934d35be395")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b589dca12e59dbe0108bee73059b5d7027119e3d")]
 [assembly: System.Reflection.AssemblyProductAttribute("UEP")]
 [assembly: System.Reflection.AssemblyTitleAttribute("UEP")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

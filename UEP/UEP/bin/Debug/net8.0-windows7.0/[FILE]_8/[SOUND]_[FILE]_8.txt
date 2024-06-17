@@ -1,0 +1,2 @@
+MonitorBrightness=27
+MonitorBrightness=100

@@ -577,7 +577,8 @@ namespace UEP
         {
             if (comboBox.SelectedIndex != -1) // 선택된 항목이 있는지 확인합니다.
             {
-                string selectedFile = comboBox.SelectedItem.ToString();
+                string selectedFile1 = comboBox.SelectedItem.ToString();
+                string selectedFile = selectedFile1 + ".txt";
                 Console.WriteLine(selectedFile);
 
                 string modifiedFile = selectedFile.Substring(0, selectedFile.Length - 4);
@@ -681,17 +682,18 @@ namespace UEP
 
             // "[FILE]"로 시작하는 모든 폴더를 가져옵니다.
             string[] directories = Directory.GetDirectories(directoryPath, "[FILE]*");
-
+            Console.WriteLine("dfd"+directoryPath);
             foreach (string directory in directories)
             {
                 // 각 폴더 내의 모든 .txt 파일을 가져옵니다.
                 string[] files = Directory.GetFiles(directory, "*.txt");
 
-                foreach (string file in files)
-                {
-                    FileInfo fileInfo = new FileInfo(file);
-                    comboBox.Items.Add(fileInfo.Name); // 파일 이름을 ComboBox에 추가합니다.
-                }
+                //foreach (string file in files)
+                //{
+                    //FileInfo fileInfo = new FileInfo(file);
+                    string combineDerectory = directory.Substring(directory.IndexOf("[FILE]_"));
+                    comboBox.Items.Add(combineDerectory); // 파일 이름을 ComboBox에 추가합니다.
+                //}
             }
         }
 
@@ -794,7 +796,11 @@ namespace UEP
             SaveProcessPathToFile(filePath, dataGridView2); // 굳이 인자로 넣어야 하나? 나중에 확인
             SaveProcessIconToFile(folderPath, dataGridView2);
 
-            SaveSettings("[MOUSE]_"+fileName,folderName);
+            SaveMouseSettings("[MOUSE]_"+fileName,folderName);
+
+            SaveMonitorSettings("[MONITOR]_" + fileName, folderName);
+
+            SaveSoundSettings("[SOUND]_" + fileName, folderName);
 
             MessageBox.Show("저장이 완료되었습니다.");
         }
@@ -887,6 +893,9 @@ namespace UEP
         // 실행버튼을 누르면 텍스트파일을 읽어오는 함수
         private void btnRunPath_Click(object sender, EventArgs e)
         {
+
+
+
             using (StreamReader sr = new StreamReader(selectFile))
             {
                 string processPath;
@@ -910,6 +919,9 @@ namespace UEP
                     }
                 }
             }
+            ApplyMouseSettings(folderPath);
+            //ApplyMonitorSettings(folderPath);
+            //ApplySoundSettings(folderPath);
         }
 
 
@@ -1294,7 +1306,7 @@ namespace UEP
 
 
         // 마우스 세팅값을 저장하는 함수
-        private void SaveSettings(string filePath, string folderPath)
+        private void SaveMouseSettings(string filePath, string folderPath)
         {
             try
             {
@@ -1345,6 +1357,63 @@ namespace UEP
                 MessageBox.Show($"설정 저장 중 오류 발생: {ex.Message}");
             }
         }
+
+        // 마우스 세팅값을 가져와서 적용시키는 함수
+        public void ApplyMouseSettings(string filePath)
+        {
+
+            // 마지막 부분 추출
+            string fileName = Path.GetFileName(filePath);
+            int underscoreIndex = fileName.IndexOf("_");
+            string desiredPart = fileName.Substring(fileName.IndexOf("[FILE]")); // 폴더이름 추출
+
+            string fullPath = filePath+"\\[MOUSE]_" + desiredPart;
+            Console.WriteLine("마우스 세팅값 가져오기 패스 : "+fullPath);
+
+
+            // 파일 존재 여부 확인
+            if (File.Exists(fullPath))
+            {
+                // 파일 읽기
+                string[] lines = File.ReadAllLines(fullPath);
+
+                // 각 설정 값 적용
+                foreach (string line in lines)
+                {
+                    string[] parts = line.Split('=');
+                    if (parts.Length == 2)
+                    {
+                        string setting = parts[0];
+                        string value = parts[1];
+
+                        switch (setting)
+                        {
+                            case "MouseSpeed":
+                                trackBarMouseSpeed.Value = int.Parse(value);
+                                break;
+                            case "WheelSensitivity":
+                                trackBarWheelSensitivity.Value = int.Parse(value);
+                                break;
+                            case "InvertMouse":
+                                chkInvertMouse.Checked = bool.Parse(value);
+                                break;
+                            case "HideCursor":
+                                chkHideCursor.Checked = bool.Parse(value);
+                                break;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // 파일이 존재하지 않는 경우 기본값 설정
+                trackBarMouseSpeed.Value = 1;
+                trackBarWheelSensitivity.Value = 1;
+                chkInvertMouse.Checked = false;
+                chkHideCursor.Checked = false;
+            }
+        }
+
 
 
         private void InitializeMouseTabComponents(TabPage tabPageMouse) // 전체적인 마우스 탭 관리
@@ -1625,6 +1694,15 @@ namespace UEP
                 }
             }
         }
+
+
+
+
+
+
+
+
+
         // 모니터 탭 관리
         private void InitializeMonitorTabComponents(TabPage tabPageMonitor)
         {
@@ -1780,24 +1858,26 @@ namespace UEP
             }
         }
 
-        // 모니터 설정들 저장하는 함순데 굳이 필요 없어서 일단 주석처리
-        /*private void SaveMonitorSettings(string filePath)
+        // 모니터 설정들 저장하는 함수
+        private void SaveMonitorSettings(string filePath, string folderPath)
         {
             try
             {
-                using (StreamWriter writer = new StreamWriter(filePath))
+                string fullPath = Path.Combine(Path.GetDirectoryName(filePath), folderPath);
+
+                using (StreamWriter writer = new StreamWriter(Path.Combine(fullPath, Path.GetFileName(filePath))))
                 {
                     writer.WriteLine($"MonitorBrightness={trackBarBrightness.Value}");
                     writer.WriteLine($"MonitorOrientation={(int)currentOrientation}");
-                    writer.WriteLine($"ColorFilter={chkColorFilter.Checked}");
+                    //writer.WriteLine($"ColorFilter={chkColorFilter.Checked}");
                 }
-                MessageBox.Show("Monitor settings saved.");
+                //MessageBox.Show("Monitor settings saved.");
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error saving monitor settings: {ex.Message}");
             }
-        }*/
+        }
 
         /*private void LoadMonitorSettings(string filePath)
         {
@@ -1841,6 +1921,20 @@ namespace UEP
                 MessageBox.Show($"Error loading monitor settings: {ex.Message}");
             }
         }*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         private void InitializeUIComponents(TabPage tabPageAudio, TabControl tabControl)
         {
@@ -2017,6 +2111,26 @@ namespace UEP
             float[] frequencies = { 32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 };
             filters[band] = BiQuadFilter.PeakingEQ(44100, frequencies[band], 1.0f, gainFactor);
             Console.WriteLine("band : " + band + "   gain : " + gain+"     바꾸는거 : " + frequencies[band]);
+        }
+
+
+        // 사운드 설정들 저장하는 함수
+        private void SaveSoundSettings(string filePath, string folderPath)
+        {
+            try
+            {
+                string fullPath = Path.Combine(Path.GetDirectoryName(filePath), folderPath);
+
+                using (StreamWriter writer = new StreamWriter(Path.Combine(fullPath, Path.GetFileName(filePath))))
+                {
+                    writer.WriteLine($"trackBarVolumeBrightness={trackBarVolume.Value}");
+                    writer.WriteLine($"trackBarMicVolumeBrightness={trackBarMicVolume.Value}");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error saving monitor settings: {ex.Message}");
+            }
         }
 
     }
