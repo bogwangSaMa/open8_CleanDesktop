@@ -1,4 +1,0 @@
-MouseSpeed=1
-WheelSensitivity=1
-InvertMouse=False
-HideCursor=False

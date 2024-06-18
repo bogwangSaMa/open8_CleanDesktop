@@ -1,2 +1,2 @@
-MonitorBrightness=9
-MonitorOrientation=0
+trackBarBrightness=43
+currentOrientation=0

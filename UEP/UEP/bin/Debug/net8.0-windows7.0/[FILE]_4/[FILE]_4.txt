@@ -1,0 +1,6 @@
+C:\Program Files\Google\Chrome\Application\chrome.exe
+//새 탭 - Chrome//chrome//1208//369//1278//678//Normal//C:\Program Files\Google\Chrome\Application\chrome.exe
+
+C:\Users\qhrhk\AppData\Local\SourceTree\app-3.4.18\SourceTree.exe
+//Sourcetree//SourceTree//180//651//1380//609//Min//C:\Users\qhrhk\AppData\Local\SourceTree\app-3.4.18\SourceTree.exe
+

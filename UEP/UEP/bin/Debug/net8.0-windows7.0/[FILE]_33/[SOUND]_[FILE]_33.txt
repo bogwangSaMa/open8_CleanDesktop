@@ -1,2 +1,2 @@
-trackBarVolume=23
+trackBarVolume=6
 trackBarMicVolume=100

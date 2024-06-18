@@ -80,9 +80,10 @@ namespace UEP
         private static extern int ShowCursor(bool bShow);
 
         // 디스플레이 밝기 조절 관련 API
-        [DllImport("Dxva2.dll", EntryPoint = "GetMonitorBrightness")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool GetMonitorBrightness(IntPtr hMonitor, out int pdwMinimumBrightness, out int pdwCurrentBrightness, out int pdwMaximumBrightness);
+        [DllImport("user32.dll")]
+        private static extern bool EnumDisplayMonitors(IntPtr hdc, IntPtr lprcClip, MonitorEnumDelegate lpfnEnum, IntPtr dwData);
+
+        private static extern bool GetMonitorBrightness(IntPtr hMonitor, out uint pdwMinimumBrightness, out uint pdwCurrentBrightness, out uint pdwMaximumBrightness);
 
         [DllImport("Dxva2.dll", EntryPoint = "SetMonitorBrightness")]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -105,6 +106,7 @@ namespace UEP
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
             public string szPhysicalMonitorDescription;
         }
+        private delegate bool MonitorEnumDelegate(IntPtr hMonitor, IntPtr hdcMonitor, IntPtr lprcMonitor, IntPtr dwData);
 
         // 모니터 방향 회전 관련 API
         [DllImport("user32.dll", CharSet = CharSet.Ansi)]
@@ -239,7 +241,7 @@ namespace UEP
         TextBox txtBrightnessValue;
         ComboBox comboOrientation;
 
-       
+
 
         private string folderPath;
         private string selectFile;
@@ -274,7 +276,7 @@ namespace UEP
 
 
             // 메인폼의 크기 상태 설정
-            this.Size = new Size(1200, 1200);
+            this.Size = new Size(1200, 900);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MinimumSize = this.Size;
             this.MaximumSize = this.Size;
@@ -387,15 +389,15 @@ namespace UEP
             btnSavePath.Location = new Point(240, 350); // 위치 설정
             btnSavePath.Size = new Size(0, 0); // 크기 설정
             btnSavePath.AutoSize = true;
-            btnSavePath.Text = "Save"; // 버튼 텍스트 설정
+            btnSavePath.Text = "저장"; // 버튼 텍스트 설정
             btnSavePath.Click += new EventHandler(btnSavePath_Click); // 클릭 이벤트 핸들러 연결
 
             // 프로세스목록을 새로고침하는 버튼
             btnProcessRefresh = new Button();
-            btnProcessRefresh.Location = new Point(800, 350); // 위치 설정
+            btnProcessRefresh.Location = new Point(1050, 350); // 위치 설정
             btnProcessRefresh.Size = new Size(0, 0); // 크기 설정
             btnProcessRefresh.AutoSize = true;
-            btnProcessRefresh.Text = "리로드"; // 버튼 텍스트 설정
+            btnProcessRefresh.Text = "새로고침"; // 버튼 텍스트 설정
             btnProcessRefresh.Click += new EventHandler(btnProcessRefresh_Click); // 클릭 이벤트 핸들러 연결
 
             // 버튼 설정            
@@ -408,7 +410,7 @@ namespace UEP
 
             // 프리셋(텍스트파일)을 삭제하는 버튼            
             deletePreset = new Button();
-            deletePreset.Location = new Point(320, 450); // 위치 설정
+            deletePreset.Location = new Point(300, 450); // 위치 설정
             deletePreset.Size = new Size(0, 0); // 크기 설정
             deletePreset.AutoSize = true;
             deletePreset.Text = "프리셋삭제"; // 버튼 텍스트 설정
@@ -427,7 +429,7 @@ namespace UEP
             btnRelocation.Location = new Point(400, 450); // 위치 설정
             btnRelocation.Size = new Size(0, 0); // 크기 설정
             btnRelocation.AutoSize = true;
-            btnRelocation.Text = "재배치"; // 버튼 텍스트 설정
+            btnRelocation.Text = "창 재배치"; // 버튼 텍스트 설정
             btnRelocation.Click += new EventHandler(btnRelocation_Click); // 클릭 이벤트 핸들러 연결
 
 
@@ -448,7 +450,7 @@ namespace UEP
             this.Controls.Add(btnProcessRefresh);
             this.Controls.Add(btnDeletePath);
             this.Controls.Add(deletePreset);
-            this.Controls.Add(btnRelocation);  
+            this.Controls.Add(btnRelocation);
 
             // 그리드뷰2를 첫 번째 탭 페이지에 추가
             tabPage1.Controls.Add(dataGridView2);
@@ -682,7 +684,7 @@ namespace UEP
 
             // "[FILE]"로 시작하는 모든 폴더를 가져옵니다.
             string[] directories = Directory.GetDirectories(directoryPath, "[FILE]*");
-            Console.WriteLine("dfd"+directoryPath);
+            Console.WriteLine("dfd" + directoryPath);
             foreach (string directory in directories)
             {
                 // 각 폴더 내의 모든 .txt 파일을 가져옵니다.
@@ -690,9 +692,9 @@ namespace UEP
 
                 //foreach (string file in files)
                 //{
-                    //FileInfo fileInfo = new FileInfo(file);
-                    string combineDerectory = directory.Substring(directory.IndexOf("[FILE]_"));
-                    comboBox.Items.Add(combineDerectory); // 파일 이름을 ComboBox에 추가합니다.
+                //FileInfo fileInfo = new FileInfo(file);
+                string combineDerectory = directory.Substring(directory.IndexOf("[FILE]_"));
+                comboBox.Items.Add(combineDerectory); // 파일 이름을 ComboBox에 추가합니다.
                 //}
             }
         }
@@ -796,7 +798,7 @@ namespace UEP
             SaveProcessPathToFile(filePath, dataGridView2); // 굳이 인자로 넣어야 하나? 나중에 확인
             SaveProcessIconToFile(folderPath, dataGridView2);
 
-            SaveMouseSettings("[MOUSE]_"+fileName,folderName);
+            SaveMouseSettings("[MOUSE]_" + fileName, folderName);
 
             SaveMonitorSettings("[MONITOR]_" + fileName, folderName);
 
@@ -876,6 +878,73 @@ namespace UEP
         }
 
 
+        private void btnRelocation_Click_Real()
+        {
+            using (StreamReader sr = new StreamReader(selectFile))
+            {
+                string processPath;
+                while ((processPath = sr.ReadLine()) != null)
+                {
+                    if (!string.IsNullOrEmpty(processPath))
+                    {
+
+                        string processInfo = sr.ReadLine(); // 프로세스 정보 읽기
+
+
+                        string[] info = processInfo.Split("//");
+
+                        if (info.Length == 9)
+                        {
+                            int x = int.Parse(info[3]);
+                            int y = int.Parse(info[4]);
+                            int width = int.Parse(info[5]);
+                            int height = int.Parse(info[6]);
+                            string state = info[7]; // 상태 값
+
+                            string name = info[2]; // 프로세스 이름
+
+                            Console.WriteLine(" //x축 : " + x + " //y축 : " + y + " //길이 : " + width + " //높이 : " + height + " //상태 : " + state);
+
+
+                            Process[] processes = Process.GetProcessesByName(name);
+                            Process p = processes[0];
+
+                            List<IntPtr> handles = new List<IntPtr>();
+
+                            foreach (ProcessThread thread in p.Threads)
+                            {
+                                Console.WriteLine("test : " + p.ProcessName);
+                                EnumThreadWindows(thread.Id, (hWnd, lParam) => { handles.Add(hWnd); return true; }, IntPtr.Zero);
+
+                            }
+
+                            var processName = name;
+                            var windowHandles = GetWindowHandleByProcessName(name, info[1]); // 애는 중복프로세스도 처리 가능
+
+
+                            Console.WriteLine("그래서 프로세스 찾음? : " + processName + " 핸들러 : " + windowHandles);
+
+                            if (info[7] == "Min")
+                            {
+                                ChangeProcessWindowState(windowHandles, 2);
+                                return;
+                            }
+                            else if (info[7] == "Max")
+                            {
+                                ChangeProcessWindowState(windowHandles, 3);
+                                return;
+                            }
+
+                            // 프로세스 창 크기 변경
+                            SetWindowPos(windowHandles, IntPtr.Zero, x, y, width, height, 0);
+
+                        }
+                        sr.ReadLine(); // 빈 줄 건너뛰기
+                    }
+                }
+            }
+        }
+
         [DllImport("user32.dll")]
         static extern bool SetWindowPlacement(IntPtr hWnd, ref WINDOWPLACEMENT lpwndpl);
 
@@ -920,8 +989,10 @@ namespace UEP
                 }
             }
             ApplyMouseSettings(folderPath);
-            //ApplyMonitorSettings(folderPath);
-            //ApplySoundSettings(folderPath);
+            ApplyMonitorSettings(folderPath);
+            ApplySoundSettings(folderPath);
+            Thread.Sleep(3000);
+            btnRelocation_Click_Real();
         }
 
 
@@ -1367,8 +1438,8 @@ namespace UEP
             int underscoreIndex = fileName.IndexOf("_");
             string desiredPart = fileName.Substring(fileName.IndexOf("[FILE]")); // 폴더이름 추출
 
-            string fullPath = filePath+"\\[MOUSE]_" + desiredPart;
-            Console.WriteLine("마우스 세팅값 가져오기 패스 : "+fullPath);
+            string fullPath = filePath + "\\[MOUSE]_" + desiredPart + ".txt";
+            Console.WriteLine("마우스 세팅값 가져오기 패스 : " + fullPath);
 
 
             // 파일 존재 여부 확인
@@ -1376,7 +1447,11 @@ namespace UEP
             {
                 // 파일 읽기
                 string[] lines = File.ReadAllLines(fullPath);
-
+                Console.WriteLine("파일 내용:");
+                foreach (string line in lines)
+                {
+                    Console.WriteLine(line);
+                }
                 // 각 설정 값 적용
                 foreach (string line in lines)
                 {
@@ -1411,10 +1486,114 @@ namespace UEP
                 trackBarWheelSensitivity.Value = 1;
                 chkInvertMouse.Checked = false;
                 chkHideCursor.Checked = false;
+                Console.WriteLine("파일이 존재하지 않습니다.");
+            }
+        }
+        public void ApplyMonitorSettings(string filePath)
+        {
+            // 파일 경로에서 파일 이름 추출
+            string fileName = Path.GetFileName(filePath);
+
+            // 파일 이름에서 폴더 이름 추출
+            string desiredPart = fileName.Substring(fileName.IndexOf("[FILE]"));
+
+            // 최종 파일 경로 설정
+            string fullPath = filePath + "\\[MONITOR]_" + desiredPart + ".txt";
+            Console.WriteLine("모니터 세팅값 가져오기 패스 : " + fullPath);
+            // 파일 존재 여부 확인
+            if (File.Exists(fullPath))
+            {
+                // 파일 읽기
+                string[] lines = File.ReadAllLines(fullPath);
+                Console.WriteLine("파일 내용:");
+                foreach (string line in lines)
+                {
+                    Console.WriteLine(line);
+
+                    // 설정 값 적용
+                    string[] parts = line.Split('=');
+                    if (parts.Length == 2)
+                    {
+                        string setting = parts[0].Trim(); // 설정 항목 이름
+                        string value = parts[1].Trim();   // 설정 값
+                        Console.WriteLine("세팅값이름 : " + setting);
+                        Console.WriteLine("밝기:" + int.Parse(value));
+                        // 각 설정 항목에 따라 UI 컨트롤에 적용
+                        switch (setting)
+                        {
+                            case "trackBarBrightness":
+                                trackBarBrightness.Value = int.Parse(value);
+                                Console.WriteLine("---밝기:" + int.Parse(value));
+                                break;
+                            case "comboOrientation":
+                                comboOrientation.SelectedIndex = int.Parse(value);
+                                break;
+                                // 추가적인 설정 항목이 있다면 여기에 추가
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // 파일이 존재하지 않는 경우 기본값 설정
+                trackBarBrightness.Value = 50; // 예시 기본값
+                comboOrientation.SelectedIndex = 0; // 예시 기본값
+                Console.WriteLine("모니터 세팅 파일이 존재하지 않습니다.");
             }
         }
 
+        public void ApplySoundSettings(string filePath)
+        {
+            // 파일 경로에서 파일 이름 추출
+            string fileName = Path.GetFileName(filePath);
 
+            // 파일 이름에서 폴더 이름 추출
+            string desiredPart = fileName.Substring(fileName.IndexOf("[FILE]"));
+
+            // 최종 파일 경로 설정
+            string fullPath = filePath + "\\[SOUND]_" + desiredPart + ".txt";
+            Console.WriteLine("사운드 세팅값 가져오기 패스 : " + fullPath);
+
+            // 파일 존재 여부 확인
+            if (File.Exists(fullPath))
+            {
+                // 파일 읽기
+                string[] lines = File.ReadAllLines(fullPath);
+                Console.WriteLine("파일 내용:");
+                foreach (string line in lines)
+                {
+                    Console.WriteLine(line);
+
+                    // 설정 값 적용
+                    string[] parts = line.Split('=');
+                    if (parts.Length == 2)
+                    {
+                        string setting = parts[0].Trim(); // 설정 항목 이름
+                        string value = parts[1].Trim();   // 설정 값
+
+                        // 설정 항목에 따라 UI 컨트롤에 값 적용
+                        switch (setting)
+                        {
+                            case "trackBarVolume":
+                                trackBarVolume.Value = int.Parse(value);
+                                labelVolume.Text = $"Volume: {trackBarVolume.Value}%";
+                                break;
+                            case "trackBarMicVolume":
+                                trackBarMicVolume.Value = int.Parse(value);
+                                break;
+                                // 추가적인 설정 항목이 있다면 여기에 추가
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // 파일이 존재하지 않는 경우 기본값 설정
+                trackBarVolume.Value = 30; // 예시 기본값
+                trackBarMicVolume.Value = 100; // 예시 기본값
+                Console.WriteLine("사운드 세팅 파일이 존재하지 않습니다.");
+            }
+        }
 
         private void InitializeMouseTabComponents(TabPage tabPageMouse) // 전체적인 마우스 탭 관리
         {
@@ -1438,7 +1617,11 @@ namespace UEP
             txtSpeedValue.Location = new Point(410, 20);
             txtSpeedValue.Size = new Size(20, 20);
             txtSpeedValue.TextAlign = HorizontalAlignment.Center;
-            txtSpeedValue.Text = trackBarMouseSpeed.Value.ToString(); // 초기값 설정
+
+            // 현재 마우스 속도를 불러와 설정
+            int currentMouseSpeed = GetMouseSpeed();
+            trackBarMouseSpeed.Value = currentMouseSpeed;
+            txtSpeedValue.Text = currentMouseSpeed.ToString();
 
             // 마우스 버튼 반전 기능 
             chkInvertMouse = new CheckBox();
@@ -1459,7 +1642,7 @@ namespace UEP
             inactivityTimer = new Timer(1500); // 1.5 seconds
             inactivityTimer.Elapsed += OnInactivityTimerElapsed;
 
-            // Set up mouse hook (마우스 움직임 감지????)
+            // Set up mouse hook (마우스 움직임 감지)
             HookManager.MouseMove += HookManager_MouseMove;
             HookManager.Start();
 
@@ -1488,7 +1671,11 @@ namespace UEP
             txtWheelSensitivityValue.Size = new Size(50, 20);
             txtWheelSensitivityValue.ReadOnly = true; // Make the TextBox read-only
             txtWheelSensitivityValue.TextAlign = HorizontalAlignment.Center;
-            txtWheelSensitivityValue.Text = trackBarWheelSensitivity.Value.ToString();
+
+            // 현재 휠 감도를 불러와 설정
+            int currentWheelSensitivity = GetWheelSensitivity();
+            trackBarWheelSensitivity.Value = currentWheelSensitivity;
+            txtWheelSensitivityValue.Text = currentWheelSensitivity.ToString();
 
             // UI 요소를 탭 페이지에 추가
             tabPageMouse.Controls.Add(lblMouseSpeed);
@@ -1499,67 +1686,6 @@ namespace UEP
             tabPageMouse.Controls.Add(lblWheelSensitivity);
             tabPageMouse.Controls.Add(trackBarWheelSensitivity);
             tabPageMouse.Controls.Add(txtWheelSensitivityValue);
-
-            Button btnSaveSettings = new Button();
-            btnSaveSettings.Text = "설정 저장";
-            btnSaveSettings.Location = new Point(20, 180);
-            //btnSaveSettings.Click += (sender, e) => SaveSettings("mouse_settings.txt");
-            tabPageMouse.Controls.Add(btnSaveSettings);
-
-            Button btnLoadSettings = new Button();
-            btnLoadSettings.Text = "설정 불러오기";
-            btnLoadSettings.Location = new Point(150, 180);
-            btnLoadSettings.Click += (sender, e) => LoadSettings("mouse_settings.txt");
-            tabPageMouse.Controls.Add(btnLoadSettings);
-        }
-
-        private void LoadSettings(string filePath)
-        {
-            try
-            {
-                if (File.Exists(filePath))
-                {
-                    string[] lines = File.ReadAllLines(filePath);
-                    foreach (string line in lines)
-                    {
-                        string[] parts = line.Split('=');
-                        if (parts.Length == 2)
-                        {
-                            string key = parts[0];
-                            string value = parts[1];
-
-                            switch (key)
-                            {
-                                case "MouseSpeed":
-                                    if (trackBarMouseSpeed != null)
-                                        trackBarMouseSpeed.Value = int.Parse(value);
-                                    break;
-                                case "WheelSensitivity":
-                                    if (trackBarWheelSensitivity != null)
-                                        trackBarWheelSensitivity.Value = int.Parse(value);
-                                    break;
-                                case "InvertMouse":
-                                    if (chkInvertMouse != null)
-                                        chkInvertMouse.Checked = bool.Parse(value);
-                                    break;
-                                case "HideCursor":
-                                    if (chkHideCursor != null)
-                                        chkHideCursor.Checked = bool.Parse(value);
-                                    break;
-                            }
-                        }
-                    }
-                    MessageBox.Show("설정을 불러왔습니다.");
-                }
-                else
-                {
-                    MessageBox.Show("설정 파일이 없습니다.");
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"설정 불러오기 중 오류 발생: {ex.Message}");
-            }
         }
 
         // 커서를 숨기는 함수
@@ -1664,6 +1790,8 @@ namespace UEP
                 SystemParametersInfo(SPI_SETMOUSEBUTTONSWAP, (uint)(isSwapped ? 1 : 0), IntPtr.Zero, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
             }
         }
+
+
         private const uint SPI_SETWHEELSCROLLLINES = 0x0069;
         private const uint SPI_GETWHEELSCROLLLINES = 0x0068;
         private const uint SPI_SETMOUSEBUTTONSWAP = 0x0021;
@@ -1675,12 +1803,60 @@ namespace UEP
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool SystemParametersInfo(uint uiAction, uint uiParam, IntPtr pvParam, uint fWinIni, out uint pvParamOut);
 
+
+
+        public static int GetMouseSpeed()
+        {
+            const uint SPI_GETMOUSESPEED = 0x0070;
+            const int MOUSE_SPEED_DEFAULT = 10;
+
+            IntPtr mouseSpeedPtr = Marshal.AllocCoTaskMem(sizeof(int));
+            Marshal.WriteInt32(mouseSpeedPtr, MOUSE_SPEED_DEFAULT);
+
+            bool success = SystemParametersInfo(SPI_GETMOUSESPEED, 0, mouseSpeedPtr, 0);
+            int mouseSpeed = Marshal.ReadInt32(mouseSpeedPtr);
+
+            Marshal.FreeCoTaskMem(mouseSpeedPtr);
+
+            if (!success)
+            {
+                MessageBox.Show("마우스 속도를 불러올 수 없습니다.");
+                return MOUSE_SPEED_DEFAULT;
+            }
+
+            return mouseSpeed;
+        }
+
+        public static int GetWheelSensitivity()
+        {
+            uint wheelSensitivity = 3; // 기본값
+            IntPtr pWheelSensitivity = Marshal.AllocHGlobal(sizeof(uint));
+            try
+            {
+                if (!SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, pWheelSensitivity, 0))
+                {
+                    MessageBox.Show("휠 감도를 불러올 수 없습니다.");
+                }
+                wheelSensitivity = (uint)Marshal.ReadInt32(pWheelSensitivity);
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(pWheelSensitivity);
+            }
+            return (int)wheelSensitivity;
+        }
+
         // 마우스 컨트롤이라고 새로 만들었는데 쓰긴 쓰는데 최적화 할려면 할 수 있음
         public class MouseControl
         {
             // SystemParametersInfo 함수를 호출하기 위한 상수 및 DLLImport 선언
-            private const uint SPI_SETLOGICALDPI = 0x007E;
+            private const uint SPI_GETMOUSESPEED = 0x0070;
             private const uint SPI_SETMOUSESPEED = 0x0071;
+            private const uint SPI_SETMOUSEBUTTONSWAP = 0x0021;
+            private const uint SPI_GETWHEELSCROLLLINES = 0x0068;
+            private const uint SPI_SETWHEELSCROLLLINES = 0x0069;
+            private const uint SPIF_UPDATEINIFILE = 0x01;
+            private const uint SPIF_SENDCHANGE = 0x02;
 
             [DllImport("user32.dll", SetLastError = true)]
             private static extern bool SystemParametersInfo(uint uiAction, uint uiParam, int pvParam, uint fWinIni);
@@ -1718,6 +1894,7 @@ namespace UEP
             trackBarBrightness.Minimum = 0;
             trackBarBrightness.Maximum = 100;
             trackBarBrightness.TickFrequency = 10;
+            trackBarBrightness.Value = 0;
             trackBarBrightness.ValueChanged += (sender, e) =>
             {
                 txtBrightnessValue.Text = trackBarBrightness.Value.ToString();
@@ -1801,6 +1978,30 @@ namespace UEP
             {
             }
         }
+        public static int GetBrightness()
+        {
+            IntPtr hMonitor = IntPtr.Zero;
+            bool success = EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, (IntPtr hMon, IntPtr hdcMon, IntPtr lprcMon, IntPtr dw) =>
+            {
+                hMonitor = hMon;
+                return true;
+            }, IntPtr.Zero);
+
+            if (!success || hMonitor == IntPtr.Zero)
+            {
+                throw new Exception("Failed to enumerate monitors");
+            }
+
+            uint minBrightness, currBrightness, maxBrightness;
+            if (GetMonitorBrightness(hMonitor, out minBrightness, out currBrightness, out maxBrightness))
+            {
+                return (int)currBrightness;
+            }
+            else
+            {
+                throw new Exception("Failed to get monitor brightness");
+            }
+        }
 
         // Apply orientation setting
         private void SetMonitorOrientation(ScreenOrientation orientation)
@@ -1867,8 +2068,8 @@ namespace UEP
 
                 using (StreamWriter writer = new StreamWriter(Path.Combine(fullPath, Path.GetFileName(filePath))))
                 {
-                    writer.WriteLine($"MonitorBrightness={trackBarBrightness.Value}");
-                    writer.WriteLine($"MonitorOrientation={(int)currentOrientation}");
+                    writer.WriteLine($"trackBarBrightness={trackBarBrightness.Value}");
+                    writer.WriteLine($"currentOrientation={(int)currentOrientation}");
                     //writer.WriteLine($"ColorFilter={chkColorFilter.Checked}");
                 }
                 //MessageBox.Show("Monitor settings saved.");
@@ -1996,7 +2197,7 @@ namespace UEP
                 this.trackBars[i] = new TrackBar();
                 this.labels[i] = new System.Windows.Forms.Label();
 
-                this.trackBars[i].Location = new System.Drawing.Point(412 + (i+i) * 30, 10);
+                this.trackBars[i].Location = new System.Drawing.Point(412 + (i + i) * 30, 10);
                 this.trackBars[i].Name = "trackBar" + i;
                 this.trackBars[i].Orientation = Orientation.Vertical;
                 this.trackBars[i].Size = new System.Drawing.Size(45, 150);
@@ -2007,14 +2208,14 @@ namespace UEP
                 //this.trackBars[i].TickFrequency = 1;
                 //this.trackBars[i].ValueChanged += TrackBar_ValueChanged;
 
-                this.labels[i].Location = new System.Drawing.Point(412 + (i+i) * 30, 160);
+                this.labels[i].Location = new System.Drawing.Point(412 + (i + i) * 30, 160);
                 this.labels[i].Name = "label" + i;
                 this.labels[i].Size = new System.Drawing.Size(45, 13);
                 this.labels[i].TabIndex = 14 + i;
                 this.labels[i].Text = freqLabels[i];
 
-                tabPageAudio.Controls.Add(this.trackBars[i]);
-                tabPageAudio.Controls.Add(this.labels[i]);
+                //tabPageAudio.Controls.Add(this.trackBars[i]);
+                //tabPageAudio.Controls.Add(this.labels[i]);
 
             }
 
@@ -2085,7 +2286,7 @@ namespace UEP
                 Console.WriteLine(i);
             }
 
-            
+
         }
 
         private void TrackBar_Scroll(object sender, EventArgs e)
@@ -2110,7 +2311,7 @@ namespace UEP
             float gainFactor = gain / 10.0f;
             float[] frequencies = { 32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 };
             filters[band] = BiQuadFilter.PeakingEQ(44100, frequencies[band], 1.0f, gainFactor);
-            Console.WriteLine("band : " + band + "   gain : " + gain+"     바꾸는거 : " + frequencies[band]);
+            Console.WriteLine("band : " + band + "   gain : " + gain + "     바꾸는거 : " + frequencies[band]);
         }
 
 
@@ -2123,8 +2324,8 @@ namespace UEP
 
                 using (StreamWriter writer = new StreamWriter(Path.Combine(fullPath, Path.GetFileName(filePath))))
                 {
-                    writer.WriteLine($"trackBarVolumeBrightness={trackBarVolume.Value}");
-                    writer.WriteLine($"trackBarMicVolumeBrightness={trackBarMicVolume.Value}");
+                    writer.WriteLine($"trackBarVolume={trackBarVolume.Value}");
+                    writer.WriteLine($"trackBarMicVolume={trackBarMicVolume.Value}");
                 }
             }
             catch (Exception ex)
@@ -2134,19 +2335,6 @@ namespace UEP
         }
 
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     // 커서를 숨기는 훅 이벤트 총괄 
@@ -2240,7 +2428,97 @@ namespace UEP
             public int x;
             public int y;
         }
-
-
     }
+
+    class DeviceSettings
+    {
+        // 마우스 감도 변경 함수
+        [DllImport("user32.dll")]
+        public static extern bool SystemParametersInfo(uint uiAction, uint uiParam, uint pvParam, uint fWinIni);
+
+        const uint SPI_SETMOUSESPEED = 0x0071;
+
+        public static void SetMouseSensitivity(int sensitivity)
+        {
+            SystemParametersInfo(SPI_SETMOUSESPEED, 0, (uint)sensitivity, 0);
+        }
+
+        // 모니터 밝기 및 대비 변경 함수 
+        public static void SetMonitorSettings(int brightness, int contrast)
+        {
+            // 구현해야함
+            Console.WriteLine($"Monitor Brightness: {brightness}, Contrast: {contrast}");
+        }
+
+        // 사운드 볼륨 및 음소거 변경 함수 
+        public static void SetSoundSettings(int volume, bool mute)
+        {
+            // 구현해야함
+            Console.WriteLine($"Sound Volume: {volume}, Mute: {mute}");
+        }
+
+        public static void ApplySettings(string filePath)
+        {
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine("Settings file not found.");
+                return;
+            }
+
+            var lines = File.ReadAllLines(filePath);
+            string currentSection = "";
+
+            foreach (var line in lines)
+            {
+                if (line.StartsWith("[") && line.EndsWith("]"))
+                {
+                    currentSection = line.Substring(1, line.Length - 2);
+                }
+                else
+                {
+                    var keyValue = line.Split('=');
+                    if (keyValue.Length != 2) continue;
+
+                    var key = keyValue[0].Trim();
+                    var value = keyValue[1].Trim();
+
+                    switch (currentSection)
+                    {
+                        case "Mouse":
+                            if (key == "Sensitivity" && int.TryParse(value, out int sensitivity))
+                            {
+                                SetMouseSensitivity(sensitivity);
+                            }
+                            break;
+
+                        case "Monitor":
+                            if (key == "Brightness" && int.TryParse(value, out int brightness))
+                            {
+                                // 밝기 함수 호출
+                                SetMonitorSettings(brightness, 0); // ex 밝기 0
+                            }
+                            else if (key == "Contrast" && int.TryParse(value, out int contrast))
+                            {
+                                // 대비 함수 호출
+                                SetMonitorSettings(0, contrast); // ex 대비 0
+                            }
+                            break;
+
+                        case "Sound":
+                            if (key == "Volume" && int.TryParse(value, out int volume))
+                            {
+                                SetSoundSettings(volume, false); // ex 음소거
+                            }
+                            else if (key == "Mute" && bool.TryParse(value, out bool mute))
+                            {
+                                SetSoundSettings(0, mute); // ex 볼륨 0
+                            }
+                            break;
+                    }
+                }
+            }
+        }
+    }
+
+
 }

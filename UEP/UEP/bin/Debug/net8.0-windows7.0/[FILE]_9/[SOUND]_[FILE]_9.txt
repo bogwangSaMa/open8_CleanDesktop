@@ -1,2 +1,2 @@
-trackBarVolumeBrightness=27
-trackBarMicVolumeBrightness=100
+trackBarVolume=23
+trackBarMicVolume=100

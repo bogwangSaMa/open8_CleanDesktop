@@ -1,2 +1,2 @@
-trackBarBrightness=3
+trackBarBrightness=0
 currentOrientation=0
