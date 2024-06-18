@@ -1,0 +1,2 @@
+trackBarVolumeBrightness=30
+trackBarMicVolumeBrightness=100

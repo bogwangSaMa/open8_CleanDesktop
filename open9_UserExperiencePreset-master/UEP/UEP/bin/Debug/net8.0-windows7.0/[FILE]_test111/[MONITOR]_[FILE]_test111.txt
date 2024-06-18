@@ -1,0 +1,2 @@
+MonitorBrightness=80
+MonitorOrientation=0

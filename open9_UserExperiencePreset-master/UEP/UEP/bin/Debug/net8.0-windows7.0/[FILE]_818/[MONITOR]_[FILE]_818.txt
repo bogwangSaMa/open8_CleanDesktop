@@ -1,0 +1,2 @@
+trackBarBrightness=100
+currentOrientation=0

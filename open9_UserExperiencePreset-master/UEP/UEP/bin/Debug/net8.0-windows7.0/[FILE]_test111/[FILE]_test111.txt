@@ -1,0 +1,6 @@
+C:\Users\dowon\AppData\Local\Discord\app-1.0.9149\Discord.exe
+//#일반 | 오픈소스 9팀 - Discord//Discord//91//7//1389//816//Normal//C:\Users\dowon\AppData\Local\Discord\app-1.0.9149\Discord.exe
+
+C:\Program Files\WindowsApps\Microsoft.WindowsNotepad_11.2404.10.0_x64__8wekyb3d8bbwe\Notepad\Notepad.exe
+//*마우스 세팅값을 저장할 때 기본 값이 1로 저장되어서 아무것도  - 메모장//Notepad//1236//353//1089//874//Normal//C:\Program Files\WindowsApps\Microsoft.WindowsNotepad_11.2404.10.0_x64__8wekyb3d8bbwe\Notepad\Notepad.exe
+
