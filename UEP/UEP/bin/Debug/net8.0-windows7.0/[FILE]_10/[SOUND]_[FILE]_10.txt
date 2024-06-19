@@ -1,0 +1,2 @@
+trackBarVolume=24
+trackBarMicVolume=100

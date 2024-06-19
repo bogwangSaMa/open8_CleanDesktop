@@ -19,6 +19,7 @@ using System.Windows.Forms;
 using System.Security.Cryptography.X509Certificates;
 using NAudio.CoreAudioApi.Interfaces;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 
 
 namespace UEP
@@ -79,34 +80,10 @@ namespace UEP
         [DllImport("user32.dll")]
         private static extern int ShowCursor(bool bShow);
 
-        // 디스플레이 밝기 조절 관련 API
+
         [DllImport("user32.dll")]
-        private static extern bool EnumDisplayMonitors(IntPtr hdc, IntPtr lprcClip, MonitorEnumDelegate lpfnEnum, IntPtr dwData);
+        static extern bool SetWindowPlacement(IntPtr hWnd, ref WINDOWPLACEMENT lpwndpl);
 
-        private static extern bool GetMonitorBrightness(IntPtr hMonitor, out uint pdwMinimumBrightness, out uint pdwCurrentBrightness, out uint pdwMaximumBrightness);
-
-        [DllImport("Dxva2.dll", EntryPoint = "SetMonitorBrightness")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool SetMonitorBrightness(IntPtr hMonitor, int dwNewBrightness);
-
-        [DllImport("Dxva2.dll", EntryPoint = "GetPhysicalMonitorsFromHMONITOR")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool GetPhysicalMonitorsFromHMONITOR(IntPtr hMonitor, uint dwPhysicalMonitorArraySize, [Out] PHYSICAL_MONITOR[] pPhysicalMonitorArray);
-
-        private bool isFirstOrientationChange = true;
-
-        [DllImport("user32.dll", CharSet = CharSet.Auto)]
-        private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
-
-
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-        private struct PHYSICAL_MONITOR
-        {
-            public IntPtr hPhysicalMonitor;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
-            public string szPhysicalMonitorDescription;
-        }
-        private delegate bool MonitorEnumDelegate(IntPtr hMonitor, IntPtr hdcMonitor, IntPtr lprcMonitor, IntPtr dwData);
 
         // 모니터 방향 회전 관련 API
         [DllImport("user32.dll", CharSet = CharSet.Ansi)]
@@ -235,11 +212,7 @@ namespace UEP
         TextBox txtWheelSensitivityValue;
 
 
-        // 모니터 컨트롤 탭에 관련한 초기화
-        private ScreenOrientation currentOrientation;
-        TrackBar trackBarBrightness;
-        TextBox txtBrightnessValue;
-        ComboBox comboOrientation;
+        
 
 
 
@@ -264,6 +237,7 @@ namespace UEP
             InitializeComponent();
             InitializeComponents();
 
+            InitializeMonitor();
 
             InitializeVolumeControl();
 
@@ -282,6 +256,14 @@ namespace UEP
             this.MaximumSize = this.Size;
             this.AutoScaleMode = AutoScaleMode.None;
             this.AutoSize = true;
+
+            // 모니터 감마조절 함수 가져오기
+            this.gamma = new Gamma(Screen.PrimaryScreen.DeviceName);
+            this.currentGamma = (float)this.sldValue.Value / 1000f;
+            this.tbValue.Text = this.sldValue.Value.ToString();
+            this.gamma.Set(this.currentGamma);
+
+            
         }
 
         // 디자인 코드
@@ -945,8 +927,6 @@ namespace UEP
             }
         }
 
-        [DllImport("user32.dll")]
-        static extern bool SetWindowPlacement(IntPtr hWnd, ref WINDOWPLACEMENT lpwndpl);
 
 
         public void ChangeProcessWindowState(IntPtr windowHandle, int windowState)
@@ -962,9 +942,6 @@ namespace UEP
         // 실행버튼을 누르면 텍스트파일을 읽어오는 함수
         private void btnRunPath_Click(object sender, EventArgs e)
         {
-
-
-
             using (StreamReader sr = new StreamReader(selectFile))
             {
                 string processPath;
@@ -991,7 +968,7 @@ namespace UEP
             ApplyMouseSettings(folderPath);
             ApplyMonitorSettings(folderPath);
             ApplySoundSettings(folderPath);
-            Thread.Sleep(3000);
+            //Thread.Sleep(3000);
             btnRelocation_Click_Real();
         }
 
@@ -1166,15 +1143,6 @@ namespace UEP
                             // 액세스 거부와 같은 예외를 처리합니다.
                         }
                     }
-
-                    // 'App Name'이 실행 중인 프로세스의 'WindowTitle'과 일치하지 않는 경우, 행을 분홍색으로 색칠합니다.
-                    //if (!isAppNameMatched)
-                    //{
-
-                    //    dataGridView2.Rows[newRow].DefaultCellStyle.BackColor = Color.Pink;
-                    //}
-
-                    // 추가된 행의 순서를 설정합니다.
                     UpdateOrderColumn();
                 }
             }
@@ -1376,6 +1344,11 @@ namespace UEP
         }
 
 
+
+
+        ///////////////////////////////////////////소프트웨어부분////////////////////////////////////////////////////////////////
+
+
         // 마우스 세팅값을 저장하는 함수
         private void SaveMouseSettings(string filePath, string folderPath)
         {
@@ -1421,7 +1394,6 @@ namespace UEP
                         MessageBox.Show("chkHideCursor is null");
                     }
                 }
-                //MessageBox.Show("설정을 저장했습니다.");
             }
             catch (Exception ex)
             {
@@ -1524,6 +1496,10 @@ namespace UEP
                             case "trackBarBrightness":
                                 trackBarBrightness.Value = int.Parse(value);
                                 Console.WriteLine("---밝기:" + int.Parse(value));
+                                break;
+                            case "sldValue":
+                                sldValue.Value = int.Parse(value);
+                                tbValue.Text = value;
                                 break;
                             case "comboOrientation":
                                 comboOrientation.SelectedIndex = int.Parse(value);
@@ -1873,53 +1849,143 @@ namespace UEP
 
 
 
+        ///////////////////////////////////////모니터설정/////////////////////////////////////////
 
+        // DDC/CI 인터페이스
+        [DllImport("dxva2.dll", EntryPoint = "GetMonitorBrightness")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool GetMonitorBrightness(IntPtr hMonitor, out uint pdwMinimumBrightness, out uint pdwCurrentBrightness, out uint pdwMaximumBrightness);
 
+        [DllImport("dxva2.dll", EntryPoint = "SetMonitorBrightness")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool SetMonitorBrightness(IntPtr hMonitor, uint dwNewBrightness);
 
+        [DllImport("user32.dll", EntryPoint = "MonitorFromWindow")]
+        public static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
 
+        [DllImport("dxva2.dll", EntryPoint = "GetNumberOfPhysicalMonitorsFromHMONITOR")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool GetNumberOfPhysicalMonitorsFromHMONITOR(IntPtr hMonitor, ref uint pdwNumberOfPhysicalMonitors);
+
+        [DllImport("dxva2.dll", EntryPoint = "GetPhysicalMonitorsFromHMONITOR")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool GetPhysicalMonitorsFromHMONITOR(IntPtr hMonitor, uint dwPhysicalMonitorArraySize, [Out] PHYSICAL_MONITOR[] pPhysicalMonitorArray);
+
+        [DllImport("dxva2.dll", EntryPoint = "DestroyPhysicalMonitors")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool DestroyPhysicalMonitors(uint dwPhysicalMonitorArraySize, [In] PHYSICAL_MONITOR[] pPhysicalMonitorArray);
+
+        private bool isFirstOrientationChange = true;
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        public struct PHYSICAL_MONITOR
+        {
+            public IntPtr hPhysicalMonitor;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+            public string szPhysicalMonitorDescription;
+        }
+
+        // 모니터 설정에 필요한 선언
+        private const float DEF = 1f;
+        private Gamma gamma;
+        private float currentGamma;
+        private TrackBar sldValue;
+        private TextBox tbValue;
+        private ScreenOrientation currentOrientation;
+        private ComboBox comboOrientation;
+        private TrackBar trackBarBrightness;
+        private TextBox txtBrightnessValue;
+        private PHYSICAL_MONITOR[] physicalMonitors;
+        private uint minBrightness, currentBrightness, maxBrightness;
+        private Button resetMonitor;
 
 
         // 모니터 탭 관리
         private void InitializeMonitorTabComponents(TabPage tabPageMonitor)
         {
-            // Monitor brightness control
+
+            //----------------------------------------------모니터 밝기조절----------------------------------------------
+            // 밝기조절 텍스트 설정
             System.Windows.Forms.Label lblBrightness = new System.Windows.Forms.Label();
-            lblBrightness.Text = "모니터 밝기 조절:";
+            lblBrightness.Text = "모니터 밝기 조절";
             lblBrightness.Location = new Point(20, 20);
             lblBrightness.Size = new Size(120, 20);
 
-            trackBarBrightness = new TrackBar();
-            trackBarBrightness.Location = new Point(150, 20);
-            trackBarBrightness.Size = new Size(250, 45);
-            trackBarBrightness.Minimum = 0;
-            trackBarBrightness.Maximum = 100;
-            trackBarBrightness.TickFrequency = 10;
-            trackBarBrightness.Value = 0;
-            trackBarBrightness.ValueChanged += (sender, e) =>
-            {
-                txtBrightnessValue.Text = trackBarBrightness.Value.ToString();
-                SetMonitorBrightness(trackBarBrightness.Value);
-            };
+            // 밝기조절 트랙바 설정
+            this.trackBarBrightness = new TrackBar();
+            this.trackBarBrightness.Minimum = 0;
+            this.trackBarBrightness.Maximum = 100;
+            this.trackBarBrightness.TickStyle = TickStyle.None;
+            this.trackBarBrightness.Location = new Point(150, 20);
+            this.trackBarBrightness.ValueChanged += BrightnessTrackBar_ValueChanged;
+            this.trackBarBrightness.Size = new Size(250, 45);
+            this.trackBarBrightness.Text = "0";
+            this.trackBarBrightness.TextChanged += BrightnessTextBox_TextChanged;
+            
+            // 밝기조절 텍스트박스 설정
+            this.txtBrightnessValue = new TextBox();
+            this.txtBrightnessValue.BorderStyle = BorderStyle.FixedSingle;
+            this.txtBrightnessValue.Location = new Point(410, 20);
+            this.txtBrightnessValue.MaxLength = 4;
+            this.txtBrightnessValue.Size = new Size(65, 29);
+            this.txtBrightnessValue.TabIndex = 2;
+            this.txtBrightnessValue.TextAlign = HorizontalAlignment.Center;
+            
 
-            txtBrightnessValue = new TextBox();
-            txtBrightnessValue.ReadOnly = true;
-            txtBrightnessValue.Location = new Point(410, 20);
-            txtBrightnessValue.Size = new Size(50, 20);
-            txtBrightnessValue.TextAlign = HorizontalAlignment.Center;
-            txtBrightnessValue.Text = trackBarBrightness.Value.ToString();
 
-            // Monitor orientation control
+            //----------------------------------------------모니터 감마조절----------------------------------------------
+            this.sldValue = new TrackBar();
+            this.tbValue = new TextBox();
+
+            ((System.ComponentModel.ISupportInitialize)(this.sldValue)).BeginInit();
+            this.SuspendLayout();
+
+            // 감마조절 텍스트 설정
+            System.Windows.Forms.Label lblGamma = new System.Windows.Forms.Label();
+            lblGamma.Text = "모니터 감마 조절";
+            lblGamma.Location = new Point(20, 80);
+            lblGamma.Size = new Size(120, 20);
+
+            // 감마조절 트랙바 설정
+            this.sldValue.LargeChange = 10;
+            this.sldValue.Location = new Point(150, 80);
+            this.sldValue.Maximum = 4460;
+            this.sldValue.Minimum = 228;
+            this.sldValue.Size = new Size(250, 45);
+            this.sldValue.TabIndex = 1;
+            this.sldValue.TickStyle = TickStyle.None;
+            this.sldValue.Value = 1000;
+            this.sldValue.Scroll += new EventHandler(this.sldValue_Scroll);
+
+            // 감마조절 텍스트박스 설정
+            this.tbValue.BorderStyle = BorderStyle.FixedSingle;
+            this.tbValue.Location = new Point(410, 80);
+            this.tbValue.MaxLength = 4;
+            this.tbValue.Size = new Size(65, 29);
+            this.tbValue.TabIndex = 2;
+            this.tbValue.TextAlign = HorizontalAlignment.Center;
+            this.tbValue.TextChanged += new EventHandler(this.tbValue_TextChanged);
+            this.tbValue.KeyPress += new KeyPressEventHandler(this.tbValue_KeyPress);
+            this.tbValue.Enter += new EventHandler(this.tbValue_Enter);
+
+
+
+            //----------------------------------------------모니터 회전조절----------------------------------------------
+
+            // 모니터 회전 텍스트 설정
             System.Windows.Forms.Label lblOrientation = new System.Windows.Forms.Label();
-            lblOrientation.Text = "모니터 화면 회전:";
-            lblOrientation.Location = new Point(20, 80);
+            lblOrientation.Text = "모니터 화면 회전";
+            lblOrientation.Location = new Point(20, 140);
             lblOrientation.Size = new Size(120, 20);
 
+            // 모니터 회전 콤보박스 설정
             ComboBox comboOrientation = new ComboBox();
-            comboOrientation.Location = new Point(150, 80);
+            comboOrientation.Location = new Point(150, 140);
             comboOrientation.Size = new Size(250, 20);
             comboOrientation.Items.AddRange(new string[] { "기본", "90도 회전", "180도 회전", "270도 회전" });
             comboOrientation.SelectedIndexChanged += (sender, e) =>
             {
+
                 currentOrientation = (ScreenOrientation)comboOrientation.SelectedIndex;
                 SetMonitorOrientation(currentOrientation);
             };
@@ -1927,83 +1993,124 @@ namespace UEP
 
 
 
+            //----------------------------------------------모니터 초기화 버튼----------------------------------------------
 
-            /*// 모니터 설정 저장 (굳이 필요 없어서 주석처리)
-            Button btnSaveMonitorSettings = new Button();
-            btnSaveMonitorSettings.Text = "Save Settings";
-            btnSaveMonitorSettings.Location = new Point(20, 180);
-            btnSaveMonitorSettings.Click += (sender, e) => SaveMonitorSettings("monitor_settings.txt");
-            Button btnLoadMonitorSettings = new Button();
-            btnLoadMonitorSettings.Text = "Load Settings";
-            btnLoadMonitorSettings.Location = new Point(150, 180);
-            btnLoadMonitorSettings.Click += (sender, e) => LoadMonitorSettings("monitor_settings.txt");*/
+            this.resetMonitor = new Button();
+            resetMonitor.Text = "모니터 설정 초기화";
+            resetMonitor.Location = new Point(20, 200); // 위치 설정
+            resetMonitor.Size = new Size(0, 0); // 크기 설정
+            resetMonitor.AutoSize = true;
+            resetMonitor.Click += new EventHandler(resetMonitor_Click);
 
-            // Add controls to the tab
+
+
             tabPageMonitor.Controls.Add(lblBrightness);
-            tabPageMonitor.Controls.Add(trackBarBrightness);
-            tabPageMonitor.Controls.Add(txtBrightnessValue);
             tabPageMonitor.Controls.Add(lblOrientation);
             tabPageMonitor.Controls.Add(comboOrientation);
-
-            /*tabPageMonitor.Controls.Add(btnSaveMonitorSettings);
-            tabPageMonitor.Controls.Add(btnLoadMonitorSettings);*/
-
-            tabPageMonitor.Controls.Add(lblBrightness);
             tabPageMonitor.Controls.Add(trackBarBrightness);
             tabPageMonitor.Controls.Add(txtBrightnessValue);
+            tabPageMonitor.Controls.Add(lblGamma);
+            tabPageMonitor.Controls.Add(sldValue);
+            tabPageMonitor.Controls.Add(tbValue);
+            tabPageMonitor.Controls.Add(resetMonitor);
         }
-        // Apply brightness setting
-        private void SetMonitorBrightness(int brightness)
+
+
+        //----------------------------------------------모니터 감마설정----------------------------------------------
+        private void sldValue_Scroll(object sender, EventArgs e)
         {
-            IntPtr hMonitor = MonitorFromWindow(this.Handle, 0);
-            if (hMonitor == IntPtr.Zero)
-            {
-                MessageBox.Show("Failed to get monitor handle.");
-                return;
-            }
-
-            PHYSICAL_MONITOR[] physicalMonitors = new PHYSICAL_MONITOR[1];
-            if (!GetPhysicalMonitorsFromHMONITOR(hMonitor, (uint)physicalMonitors.Length, physicalMonitors))
-            {
-                MessageBox.Show("Failed to get physical monitor.");
-                return;
-            }
-
-            IntPtr hPhysicalMonitor = physicalMonitors[0].hPhysicalMonitor;
-            if (!SetMonitorBrightness(hPhysicalMonitor, brightness))
-            {
-                MessageBox.Show("Failed to set monitor brightness.");
-            }
-            else
-            {
-            }
+            this.tbValue.Text = this.sldValue.Value.ToString();
+            this.currentGamma = (float)this.sldValue.Value / 1000f;
+            this.gamma.Set(this.currentGamma);
         }
-        public static int GetBrightness()
+
+        private void tbValue_TextChanged(object sender, EventArgs e)
         {
-            IntPtr hMonitor = IntPtr.Zero;
-            bool success = EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, (IntPtr hMon, IntPtr hdcMon, IntPtr lprcMon, IntPtr dw) =>
-            {
-                hMonitor = hMon;
-                return true;
-            }, IntPtr.Zero);
+            if (string.IsNullOrEmpty(this.tbValue.Text))
+                return;
+            int num = int.Parse(this.tbValue.Text);
+            if (num > this.sldValue.Maximum || num < this.sldValue.Minimum)
+                return;
+            this.sldValue.Value = num;
+            this.sldValue_Scroll(sender, e);
+        }
 
-            if (!success || hMonitor == IntPtr.Zero)
-            {
-                throw new Exception("Failed to enumerate monitors");
-            }
+        private void tbValue_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (char.IsDigit(e.KeyChar) || (int)e.KeyChar == (int)Convert.ToChar(Keys.Back))
+                return;
+            e.Handled = true;
+        }
 
-            uint minBrightness, currBrightness, maxBrightness;
-            if (GetMonitorBrightness(hMonitor, out minBrightness, out currBrightness, out maxBrightness))
+        private void tbValue_Enter(object sender, EventArgs e)
+        {
+            this.tbValue.SelectAll();
+        }
+
+
+
+        //----------------------------------------------모니터 밝기설정----------------------------------------------
+        private void InitializeMonitor()
+        {
+            IntPtr hMonitor = MonitorFromWindow(this.Handle, 2);
+            if (hMonitor != IntPtr.Zero)
             {
-                return (int)currBrightness;
-            }
-            else
-            {
-                throw new Exception("Failed to get monitor brightness");
+                uint monitorCount = 0;
+                if (GetNumberOfPhysicalMonitorsFromHMONITOR(hMonitor, ref monitorCount))
+                {
+                    physicalMonitors = new PHYSICAL_MONITOR[monitorCount];
+                    if (GetPhysicalMonitorsFromHMONITOR(hMonitor, monitorCount, physicalMonitors))
+                    {
+                        if (physicalMonitors != null && physicalMonitors.Length > 0)
+                        {
+                            if (GetMonitorBrightness(physicalMonitors[0].hPhysicalMonitor, out minBrightness, out currentBrightness, out maxBrightness))
+                            {
+                                trackBarBrightness.Value = (int)(currentBrightness * 100 / maxBrightness);
+                                txtBrightnessValue.Text = trackBarBrightness.Value.ToString();
+                            }
+                        }
+                    }
+                }
             }
         }
 
-        // Apply orientation setting
+        private void BrightnessTrackBar_ValueChanged(object sender, EventArgs e)
+        {
+            if (physicalMonitors != null && physicalMonitors.Length > 0)
+            {
+                uint newBrightness = (uint)(trackBarBrightness.Value * maxBrightness / 100);
+                if (SetMonitorBrightness(physicalMonitors[0].hPhysicalMonitor, newBrightness))
+                {
+                    txtBrightnessValue.Text = trackBarBrightness.Value.ToString();
+                }
+            }
+        }
+
+        private void BrightnessTextBox_TextChanged(object sender, EventArgs e)
+        {
+            if (int.TryParse(txtBrightnessValue.Text, out int brightness))
+            {
+                trackBarBrightness.Value = Math.Clamp(brightness, 0, 100);
+                if (physicalMonitors != null && physicalMonitors.Length > 0)
+                {
+                    uint newBrightness = (uint)(trackBarBrightness.Value * maxBrightness / 100);
+                    SetMonitorBrightness(physicalMonitors[0].hPhysicalMonitor, newBrightness);
+                }
+            }
+        }
+
+        //protected override void OnFormClosed(FormClosedEventArgs e)
+        //{
+        //    if (physicalMonitors != null && physicalMonitors.Length > 0)
+        //    {
+        //        DestroyPhysicalMonitors((uint)physicalMonitors.Length, physicalMonitors);
+        //    }
+        //    base.OnFormClosed(e);
+        //}
+
+
+
+        //----------------------------------------------모니터 회전설정----------------------------------------------
         private void SetMonitorOrientation(ScreenOrientation orientation)
         {
             DEVMODE dm = new DEVMODE();
@@ -2045,7 +2152,7 @@ namespace UEP
                     }
                     else
                     {
-                        MessageBox.Show("모니터 회전이 성공했습니다.");
+                        //MessageBox.Show("모니터 회전이 성공했습니다.");
                     }
                 }
                 else
@@ -2059,7 +2166,20 @@ namespace UEP
             }
         }
 
-        // 모니터 설정들 저장하는 함수
+
+
+        //----------------------------------------------모니터 초기화설정----------------------------------------------
+        private void resetMonitor_Click(object sender, EventArgs e)
+        {
+            this.sldValue.Value = 1000;
+            this.tbValue.Text = "1000";
+            this.trackBarBrightness.Value = 50;
+            SetMonitorOrientation(0);
+        }
+
+
+
+        //----------------------------------------------모니터 설정 저장----------------------------------------------
         private void SaveMonitorSettings(string filePath, string folderPath)
         {
             try
@@ -2069,6 +2189,7 @@ namespace UEP
                 using (StreamWriter writer = new StreamWriter(Path.Combine(fullPath, Path.GetFileName(filePath))))
                 {
                     writer.WriteLine($"trackBarBrightness={trackBarBrightness.Value}");
+                    writer.WriteLine($"sldValue={sldValue.Value}");
                     writer.WriteLine($"currentOrientation={(int)currentOrientation}");
                     //writer.WriteLine($"ColorFilter={chkColorFilter.Checked}");
                 }
@@ -2080,48 +2201,6 @@ namespace UEP
             }
         }
 
-        /*private void LoadMonitorSettings(string filePath)
-        {
-            try
-            {
-                if (File.Exists(filePath))
-                {
-                    string[] lines = File.ReadAllLines(filePath);
-                    foreach (string line in lines)
-                    {
-                        string[] parts = line.Split('=');
-                        if (parts.Length == 2)
-                        {
-                            string key = parts[0];
-                            string value = parts[1];
-                            switch (key)
-                            {
-                                case "MonitorBrightness":
-                                    trackBarBrightness.Value = int.Parse(value);
-                                    SetMonitorBrightness(trackBarBrightness.Value);
-                                    break;
-                                case "MonitorOrientation":
-                                    currentOrientation = (ScreenOrientation)Enum.Parse(typeof(ScreenOrientation), value);
-                                    SetMonitorOrientation(currentOrientation);
-                                    break;
-                                case "ColorFilter":
-                                    chkColorFilter.Checked = bool.Parse(value);
-                                    break;
-                            }
-                        }
-                    }
-                    MessageBox.Show("Monitor settings loaded.");
-                }
-                else
-                {
-                    MessageBox.Show("Settings file not found.");
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error loading monitor settings: {ex.Message}");
-            }
-        }*/
 
 
 
@@ -2136,7 +2215,7 @@ namespace UEP
 
 
 
-
+        // 사운드 조절 함수
         private void InitializeUIComponents(TabPage tabPageAudio, TabControl tabControl)
         {
 
@@ -2218,13 +2297,6 @@ namespace UEP
                 //tabPageAudio.Controls.Add(this.labels[i]);
 
             }
-
-            // 
-            // Form1
-            // 
-            this.ClientSize = new System.Drawing.Size(400, 350);
-            this.Name = "Form1";
-            this.Text = "Volume Control with Equalizer";
         }
 
         private void InitializeVolumeControl()
