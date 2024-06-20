@@ -6,7 +6,7 @@
 (프로젝트 소개)
 
 
-[UEP 설치 방법]
+****[UEP 설치 방법]****
 ![image](https://github.com/bogwangSaMa/open9_UserExperiencePreset/assets/130433810/59cade1d-1354-4a60-8751-3d7bd7088289)
 
 ![image](https://github.com/bogwangSaMa/open9_UserExperiencePreset/assets/130433810/d37b21d4-91f6-4c98-bec1-e45e65670b08)
@@ -17,9 +17,9 @@
 
 
 
-[UEP 사용 방법]
+****[UEP 사용 방법]****
 
-[1. 프로그램의 구성]
+**[1. 프로그램의 구성]**
 ![image](https://github.com/bogwangSaMa/open9_UserExperiencePreset/assets/130433810/a0ae7464-8dee-40d5-a2b2-5ee31f33c90f)
 
 ![image](https://github.com/bogwangSaMa/open9_UserExperiencePreset/assets/130433810/e9d63ef5-cc9a-4db9-a9ae-ac29a6ae1164)
@@ -36,7 +36,7 @@
 
 
 
-[2. 프로그램의 기본적인 사용방법]
+**[2. 프로그램의 기본적인 사용방법]**
 ![image](https://github.com/bogwangSaMa/open9_UserExperiencePreset/assets/130433810/e0961520-fac3-47fc-a392-6d2fc8745b46)
 
 ![image](https://github.com/bogwangSaMa/open9_UserExperiencePreset/assets/130433810/a13b32d4-cc84-43ee-8c13-1f711791dbb7)
