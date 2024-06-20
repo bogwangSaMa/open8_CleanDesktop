@@ -20,6 +20,7 @@ using System.Security.Cryptography.X509Certificates;
 using NAudio.CoreAudioApi.Interfaces;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
+using static UEP.Form1;
 
 
 namespace UEP
@@ -105,6 +106,11 @@ namespace UEP
         [DllImport("user32.dll")]
         private static extern IntPtr GetDC(IntPtr hWnd);
 
+        [DllImport("user32.dll")]
+        public static extern bool GetWindowRect(IntPtr hWnd, ref Rect rect);
+
+        private delegate bool EnumThreadWndProc(IntPtr hWnd, IntPtr lParam);
+
         private const int GAMMA_RAMP_SIZE = 256;
 
         private const int PHYSICALWIDTH = 110;
@@ -184,6 +190,21 @@ namespace UEP
             DMDO_270 = 3
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        public struct Rect
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+
+        private const int SW_HIDE = 0;
+        private const int SW_SHOWNORMAL = 1;
+        private const int SW_SHOWMINIMIZED = 2;
+        private const int SW_SHOWMAXIMIZED = 3;
+        private const int SW_SHOWNOACTIVATE = 4;
+
         private DataGridView dataGridView1; // 상단에 프로세스 정보 출력
         private DataGridView dataGridView2; // 하단에 프로세스 정보 출력
         private ImageList imageList1; // 아이콘 삽입을 위한 이미지 리스트
@@ -212,42 +233,17 @@ namespace UEP
         TextBox txtWheelSensitivityValue;
 
 
-        
-
-
-
         private string folderPath;
         private string selectFile;
-
-        // 오디오 컨트롤 탭에 관련한 초기화
-        private TrackBar trackBarVolume;
-        private System.Windows.Forms.Label labelVolume;
-        private TrackBar trackBarMicVolume;
-        private System.Windows.Forms.Label labelMicVolume;
-        private TrackBar[] trackBars;
-        private System.Windows.Forms.Label[] labels;
-        private MMDeviceEnumerator devEnum;
-        private MMDevice renderDevice;
-        private MMDevice captureDevice;
-        private BiQuadFilter[] filters;
 
 
         public Form1()
         {
             InitializeComponent();
             InitializeComponents();
-
             InitializeMonitor();
-
             InitializeVolumeControl();
-
-            // 마이크 볼륨 컨트롤 초기화
             InitializeMicVolumeControl();
-
-            // 이퀄라이저 초기화
-            InitializeEqualizer();
-
-
 
             // 메인폼의 크기 상태 설정
             this.Size = new Size(1200, 900);
@@ -263,7 +259,6 @@ namespace UEP
             this.tbValue.Text = this.sldValue.Value.ToString();
             this.gamma.Set(this.currentGamma);
 
-            
         }
 
         // 디자인 코드
@@ -369,7 +364,7 @@ namespace UEP
             // 버튼 설정
             btnSavePath = new Button();
             btnSavePath.Location = new Point(240, 350); // 위치 설정
-            btnSavePath.Size = new Size(0, 0); // 크기 설정
+            btnSavePath.Size = new Size(50, 0); // 크기 설정
             btnSavePath.AutoSize = true;
             btnSavePath.Text = "저장"; // 버튼 텍스트 설정
             btnSavePath.Click += new EventHandler(btnSavePath_Click); // 클릭 이벤트 핸들러 연결
@@ -377,7 +372,7 @@ namespace UEP
             // 프로세스목록을 새로고침하는 버튼
             btnProcessRefresh = new Button();
             btnProcessRefresh.Location = new Point(1050, 350); // 위치 설정
-            btnProcessRefresh.Size = new Size(0, 0); // 크기 설정
+            btnProcessRefresh.Size = new Size(80, 0); // 크기 설정
             btnProcessRefresh.AutoSize = true;
             btnProcessRefresh.Text = "새로고침"; // 버튼 텍스트 설정
             btnProcessRefresh.Click += new EventHandler(btnProcessRefresh_Click); // 클릭 이벤트 핸들러 연결
@@ -385,15 +380,15 @@ namespace UEP
             // 버튼 설정            
             btnRunPath = new Button();
             btnRunPath.Location = new Point(240, 450); // 위치 설정
-            btnRunPath.Size = new Size(0, 0); // 크기 설정
+            btnRunPath.Size = new Size(50, 0); // 크기 설정
             btnRunPath.AutoSize = true;
             btnRunPath.Text = "실행"; // 버튼 텍스트 설정
             btnRunPath.Click += new EventHandler(btnRunPath_Click); // 클릭 이벤트 핸들러 연결
 
             // 프리셋(텍스트파일)을 삭제하는 버튼            
             deletePreset = new Button();
-            deletePreset.Location = new Point(300, 450); // 위치 설정
-            deletePreset.Size = new Size(0, 0); // 크기 설정
+            deletePreset.Location = new Point(310, 450); // 위치 설정
+            deletePreset.Size = new Size(80, 0); // 크기 설정
             deletePreset.AutoSize = true;
             deletePreset.Text = "프리셋삭제"; // 버튼 텍스트 설정
             deletePreset.Click += new EventHandler(deletePreset_Click); // 클릭 이벤트 핸들러 연결
@@ -403,13 +398,13 @@ namespace UEP
             btnDeletePath.Location = new Point(30, 800); // 위치 설정
             btnDeletePath.Size = new Size(0, 0); // 크기 설정
             btnDeletePath.AutoSize = true;
-            btnDeletePath.Text = "삭제"; // 버튼 텍스트 설정
+            btnDeletePath.Text = "행 삭제"; // 버튼 텍스트 설정
             btnDeletePath.Click += new EventHandler(deleteButton_Click); // 클릭 이벤트 핸들러 연결
 
             // 창 재배치 버튼
             btnRelocation = new Button();
-            btnRelocation.Location = new Point(400, 450); // 위치 설정
-            btnRelocation.Size = new Size(0, 0); // 크기 설정
+            btnRelocation.Location = new Point(410, 450); // 위치 설정
+            btnRelocation.Size = new Size(80, 0); // 크기 설정
             btnRelocation.AutoSize = true;
             btnRelocation.Text = "창 재배치"; // 버튼 텍스트 설정
             btnRelocation.Click += new EventHandler(btnRelocation_Click); // 클릭 이벤트 핸들러 연결
@@ -530,11 +525,11 @@ namespace UEP
 
                 // 폴더 내의 모든 파일과 하위 폴더를 삭제
                 Directory.Delete(folderPath, true);
-                MessageBox.Show("폴더가 삭제되었습니다.");
+                MessageBox.Show("프리셋이 삭제되었습니다.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show("오류가 발생했습니다: " + ex.Message);
+                MessageBox.Show("프리셋을 선택해주세요");
             }
         }
 
@@ -552,6 +547,7 @@ namespace UEP
             DataGridViewRow selectedRow = dataGridView2.Rows[e.RowIndex];
             Form2 detailsForm = new Form2(selectedRow);
             detailsForm.ShowDialog();
+            UpdateOrderColumn();
 
         }
 
@@ -666,7 +662,6 @@ namespace UEP
 
             // "[FILE]"로 시작하는 모든 폴더를 가져옵니다.
             string[] directories = Directory.GetDirectories(directoryPath, "[FILE]*");
-            Console.WriteLine("dfd" + directoryPath);
             foreach (string directory in directories)
             {
                 // 각 폴더 내의 모든 .txt 파일을 가져옵니다.
@@ -741,6 +736,11 @@ namespace UEP
         // 저장 버튼을 누르면 프로세스의 경로가 텍스트 파일 형태로 저장되는 함수
         private void btnSavePath_Click(object sender, EventArgs e)
         {
+            if (txtProcessName.Text == "")
+            {
+                MessageBox.Show("프리셋 이름을 입력해주세요");
+                return;
+            }
             // 프로세스 행의 색이 분홍색이면 저장하지 않습니다.
             List<string> pinkProcesses = new List<string>();
             foreach (DataGridViewRow row in dataGridView2.Rows)
@@ -790,10 +790,16 @@ namespace UEP
         }
 
 
-
         // 창 재배치 버튼 이벤트 핸들러 (창을 재배치한다)
         private void btnRelocation_Click(object sender, EventArgs e)
         {
+
+            if (selectFile == null)
+            {
+                MessageBox.Show("프리셋을 선택해주세요");
+                return;
+            }
+
             using (StreamReader sr = new StreamReader(selectFile))
             {
                 string processPath;
@@ -860,8 +866,32 @@ namespace UEP
         }
 
 
-        private void btnRelocation_Click_Real()
+        // 윈도우의 크기 및 위치를 조절하는 함수
+        private void ChangeProcessWindowState(IntPtr windowHandle, int windowState)
         {
+            switch (windowState)
+            {
+                case 2: // Minimize
+                    ShowWindow(windowHandle, SW_SHOWMINIMIZED);
+                    break;
+                case 3: // Maximize
+                    ShowWindow(windowHandle, SW_SHOWMAXIMIZED);
+                    break;
+                default:
+                    ShowWindow(windowHandle, SW_SHOWNORMAL);
+                    break;
+            }
+        }
+
+
+        // 실행버튼을 눌렀을 때 동작하는 이벤트 핸들러
+        private async void btnRunPath_Click(object sender, EventArgs e)
+        {
+            if(selectFile == null)
+            {
+                MessageBox.Show("프리셋을 선택해주세요");
+                return;
+            }
             using (StreamReader sr = new StreamReader(selectFile))
             {
                 string processPath;
@@ -869,112 +899,41 @@ namespace UEP
                 {
                     if (!string.IsNullOrEmpty(processPath))
                     {
-
-                        string processInfo = sr.ReadLine(); // 프로세스 정보 읽기
-
-
-                        string[] info = processInfo.Split("//");
-
-                        if (info.Length == 9)
-                        {
-                            int x = int.Parse(info[3]);
-                            int y = int.Parse(info[4]);
-                            int width = int.Parse(info[5]);
-                            int height = int.Parse(info[6]);
-                            string state = info[7]; // 상태 값
-
-                            string name = info[2]; // 프로세스 이름
-
-                            Console.WriteLine(" //x축 : " + x + " //y축 : " + y + " //길이 : " + width + " //높이 : " + height + " //상태 : " + state);
-
-
-                            Process[] processes = Process.GetProcessesByName(name);
-                            Process p = processes[0];
-
-                            List<IntPtr> handles = new List<IntPtr>();
-
-                            foreach (ProcessThread thread in p.Threads)
-                            {
-                                Console.WriteLine("test : " + p.ProcessName);
-                                EnumThreadWindows(thread.Id, (hWnd, lParam) => { handles.Add(hWnd); return true; }, IntPtr.Zero);
-
-                            }
-
-                            var processName = name;
-                            var windowHandles = GetWindowHandleByProcessName(name, info[1]); // 애는 중복프로세스도 처리 가능
-
-
-                            Console.WriteLine("그래서 프로세스 찾음? : " + processName + " 핸들러 : " + windowHandles);
-
-                            if (info[7] == "Min")
-                            {
-                                ChangeProcessWindowState(windowHandles, 2);
-                                return;
-                            }
-                            else if (info[7] == "Max")
-                            {
-                                ChangeProcessWindowState(windowHandles, 3);
-                                return;
-                            }
-
-                            // 프로세스 창 크기 변경
-                            SetWindowPos(windowHandles, IntPtr.Zero, x, y, width, height, 0);
-
-                        }
-                        sr.ReadLine(); // 빈 줄 건너뛰기
+                        await RunProcess(processPath, sr);
                     }
                 }
             }
-        }
 
-
-
-        public void ChangeProcessWindowState(IntPtr windowHandle, int windowState)
-        {
-            WINDOWPLACEMENT placement = new WINDOWPLACEMENT();
-            placement.Length = Marshal.SizeOf(typeof(WINDOWPLACEMENT));
-            placement.ShowCmd = windowState;
-
-            SetWindowPlacement(windowHandle, ref placement);
-        }
-
-
-        // 실행버튼을 누르면 텍스트파일을 읽어오는 함수
-        private void btnRunPath_Click(object sender, EventArgs e)
-        {
-            using (StreamReader sr = new StreamReader(selectFile))
-            {
-                string processPath;
-                while ((processPath = sr.ReadLine()) != null)
-                {
-                    if (!string.IsNullOrEmpty(processPath))
-                    {
-                        Process process = Process.Start(new ProcessStartInfo
-                        {
-                            FileName = processPath,
-                            UseShellExecute = true
-                        });
-
-                        //process.WaitForInputIdle(); // 프로세스 창이 완전히 열릴 때까지 기다림 (이거 하면 오류생김,,)
-                        //process.WaitForExit();
-                        Thread.Sleep(300);
-
-                        string processInfo = sr.ReadLine(); // 프로세스 정보 읽기
-                        UpdateProcessInfo(process, processInfo);
-                        sr.ReadLine(); // 빈 줄 건너뛰기
-                    }
-                }
-            }
             ApplyMouseSettings(folderPath);
             ApplyMonitorSettings(folderPath);
             ApplySoundSettings(folderPath);
-            //Thread.Sleep(3000);
-            btnRelocation_Click_Real();
         }
 
 
+        // 프로세스를 실행시키는 함수
+        private async Task RunProcess(string processPath, StreamReader sr)
+        {
+            await Task.Run(() =>
+            {
+                Process process = Process.Start(new ProcessStartInfo
+                {
+                    FileName = processPath,
+                    UseShellExecute = true
+                });
+
+                //process.WaitForInputIdle(); // Wait until the process is fully loaded
+
+                string processInfo = sr.ReadLine(); // 프로세스 정보 읽기
+                UpdateProcessInfo(process, processInfo); // 창 재배치 작업 수행
+                sr.ReadLine(); // 빈 줄 건너뛰기
+            });
+        }
+
+
+        // 프로세스이름으로 윈도우 창 핸들 가져오는 함수
         public static IntPtr GetWindowHandleByProcessName(string processName, string appName)
         {
+            Console.WriteLine("프로세스이름: " + processName + "앱이름 : " + appName);
             List<IntPtr> matchedHandles = new List<IntPtr>();
 
             foreach (Process p in Process.GetProcessesByName(processName))
@@ -1033,46 +992,53 @@ namespace UEP
                     int width = int.Parse(info[5]);
                     int height = int.Parse(info[6]);
                     string state = info[7]; // 상태 값
-
-
                     string name = info[2]; // 프로세스 이름
 
                     Console.WriteLine(" //x축 : " + x + " //y축 : " + y + " //길이 : " + width + " //높이 : " + height + " //상태 : " + state);
 
-
-                    Process[] processes = Process.GetProcessesByName(name);
-                    Process p = processes[0];
-
-                    List<IntPtr> handles = new List<IntPtr>();
-
-                    foreach (ProcessThread thread in p.Threads)
+                    Task.Run(() =>
                     {
-                        Console.WriteLine("test : " + p.ProcessName);
-                        EnumThreadWindows(thread.Id, (hWnd, lParam) => { handles.Add(hWnd); return true; }, IntPtr.Zero);
+                        Thread.Sleep(1000);
+                        while (true)
+                        {
+                        
+                        // 현재 창 위치 및 크기 가져오기
+                        Rect rect = new Rect();
+                            IntPtr windowHandle = GetWindowHandleByProcessName(name, info[1]);
+                            GetWindowRect(windowHandle, ref rect);
+                            Console.WriteLine("++가져온거 : name:"+name+"{0}/{1}/{2}/{3}", rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top);
+                            Console.WriteLine("--저장된거 : name:" + name + "{0}/{1}/{2}/{3}", x, y, width, height);
+                            if (rect.Left != x || rect.Top != y || rect.Right - rect.Left != width || rect.Bottom - rect.Top != height)
+                            {
+                                Console.WriteLine("++가져온거 : name:" + name + "{0}/{1}/{2}/{3}", rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top);
+                                Console.WriteLine("--저장된거 : name:" + name + "{0}/{1}/{2}/{3}", x, y, width, height);
 
-                    }
+                                // 창 크기 및 위치가 일치하지 않으면 재배치
+                                SetWindowPos(windowHandle, IntPtr.Zero, x, y, width, height, 0);
+                            }
 
-                    var processName = name;
-                    //var windowHandles = GetWindowHandleByProcessName(name); // 이게 진짜임 이게 진짜 핸들러임
-                    var windowHandles = GetWindowHandleByProcessName(name, info[1]); // 애는 중복프로세스도 처리 가능
+                            else
+                            {
 
+                                Console.WriteLine("=====종료 : name:" + name + "{0}/{1}/{2}/{3}", rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top);
+                                Console.WriteLine("=====종료 : name:" + name + "{0}/{1}/{2}/{3}", x, y, width, height);
+                                // 창 크기 및 위치가 일치하면 루프 종료
+                                SetWindowPos(windowHandle, IntPtr.Zero, x, y, width, height, 0);
+                                break;
+                            }
 
-                    Console.WriteLine("그래서 프로세스 찾음? : " + processName + " 핸들러 : " + windowHandles);
-
-                    if (info[7] == "Min")
-                    {
-                        ChangeProcessWindowState(windowHandles, 2);
-                        return;
-                    }
-                    else if (info[7] == "Max")
-                    {
-                        ChangeProcessWindowState(windowHandles, 3);
-                        return;
-                    }
-
-                    // 프로세스 창 크기 변경
-                    SetWindowPos(windowHandles, IntPtr.Zero, x, y, width, height, 0);
-
+                            Thread.Sleep(500); // 잠시 대기 후 다시 비교
+                        }
+                        IntPtr windowHandle1 = GetWindowHandleByProcessName(name, info[1]);
+                        if (state == "Min")
+                        {
+                            ChangeProcessWindowState(windowHandle1, 2);
+                        }
+                        else if (state == "Max")
+                        {
+                            ChangeProcessWindowState(windowHandle1, 3);
+                        }
+                    });
                 }
             }
         }
@@ -1093,7 +1059,7 @@ namespace UEP
                     bool allCellsMatch = true;
                     // 그리드뷰1의 셀을 순회하면서 그리드뷰2의 인덱스 값과 비교합니다.
                     // 여기서 i는 그리드뷰1의 인덱스, i+1은 그리드뷰2의 인덱스에 해당합니다.
-                    for (int i = 0; i < selectedRow.Cells.Count; i++)
+                    for (int i = 0; i < 3; i++)
                     {
                         // 그리드뷰2의 셀 인덱스는 그리드뷰1의 셀 인덱스보다 하나 더 높습니다.
                         int gridView2Index = i + 1;
@@ -1247,7 +1213,6 @@ namespace UEP
         }
 
 
-
         // 그리드뷰1에 프로세스 정보를 가져오는 함수
         private bool EnumWindowsCallback(IntPtr hWnd, IntPtr lParam)
         {
@@ -1346,7 +1311,14 @@ namespace UEP
 
 
 
-        ///////////////////////////////////////////소프트웨어부분////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
 
 
         // 마우스 세팅값을 저장하는 함수
@@ -1411,19 +1383,13 @@ namespace UEP
             string desiredPart = fileName.Substring(fileName.IndexOf("[FILE]")); // 폴더이름 추출
 
             string fullPath = filePath + "\\[MOUSE]_" + desiredPart + ".txt";
-            Console.WriteLine("마우스 세팅값 가져오기 패스 : " + fullPath);
-
 
             // 파일 존재 여부 확인
             if (File.Exists(fullPath))
             {
                 // 파일 읽기
                 string[] lines = File.ReadAllLines(fullPath);
-                Console.WriteLine("파일 내용:");
-                foreach (string line in lines)
-                {
-                    Console.WriteLine(line);
-                }
+
                 // 각 설정 값 적용
                 foreach (string line in lines)
                 {
@@ -1471,16 +1437,13 @@ namespace UEP
 
             // 최종 파일 경로 설정
             string fullPath = filePath + "\\[MONITOR]_" + desiredPart + ".txt";
-            Console.WriteLine("모니터 세팅값 가져오기 패스 : " + fullPath);
             // 파일 존재 여부 확인
             if (File.Exists(fullPath))
             {
                 // 파일 읽기
                 string[] lines = File.ReadAllLines(fullPath);
-                Console.WriteLine("파일 내용:");
                 foreach (string line in lines)
                 {
-                    Console.WriteLine(line);
 
                     // 설정 값 적용
                     string[] parts = line.Split('=');
@@ -1488,14 +1451,11 @@ namespace UEP
                     {
                         string setting = parts[0].Trim(); // 설정 항목 이름
                         string value = parts[1].Trim();   // 설정 값
-                        Console.WriteLine("세팅값이름 : " + setting);
-                        Console.WriteLine("밝기:" + int.Parse(value));
                         // 각 설정 항목에 따라 UI 컨트롤에 적용
                         switch (setting)
                         {
                             case "trackBarBrightness":
                                 trackBarBrightness.Value = int.Parse(value);
-                                Console.WriteLine("---밝기:" + int.Parse(value));
                                 break;
                             case "sldValue":
                                 sldValue.Value = int.Parse(value);
@@ -1528,17 +1488,14 @@ namespace UEP
 
             // 최종 파일 경로 설정
             string fullPath = filePath + "\\[SOUND]_" + desiredPart + ".txt";
-            Console.WriteLine("사운드 세팅값 가져오기 패스 : " + fullPath);
 
             // 파일 존재 여부 확인
             if (File.Exists(fullPath))
             {
                 // 파일 읽기
                 string[] lines = File.ReadAllLines(fullPath);
-                Console.WriteLine("파일 내용:");
                 foreach (string line in lines)
                 {
-                    Console.WriteLine(line);
 
                     // 설정 값 적용
                     string[] parts = line.Split('=');
@@ -1552,10 +1509,15 @@ namespace UEP
                         {
                             case "trackBarVolume":
                                 trackBarVolume.Value = int.Parse(value);
+                                float Avolume = trackBarVolume.Value / 100.0f;
+                                renderDevice.AudioEndpointVolume.MasterVolumeLevelScalar = Avolume;
                                 labelVolume.Text = $"Volume: {trackBarVolume.Value}%";
                                 break;
                             case "trackBarMicVolume":
                                 trackBarMicVolume.Value = int.Parse(value);
+                                float Rvolume = trackBarMicVolume.Value / 100.0f;
+                                captureDevice.AudioEndpointVolume.MasterVolumeLevelScalar = Rvolume;
+                                labelMicVolume.Text = $"Mic Volume: {trackBarMicVolume.Value}%";
                                 break;
                                 // 추가적인 설정 항목이 있다면 여기에 추가
                         }
@@ -2212,7 +2174,17 @@ namespace UEP
 
 
 
-
+        // 오디오 컨트롤 탭에 관련한 초기화
+        private TrackBar trackBarVolume;
+        private System.Windows.Forms.Label labelVolume;
+        private TrackBar trackBarMicVolume;
+        private System.Windows.Forms.Label labelMicVolume;
+        private TrackBar[] trackBars;
+        private System.Windows.Forms.Label[] labels;
+        private MMDeviceEnumerator devEnum;
+        private MMDevice renderDevice;
+        private MMDevice captureDevice;
+        private BiQuadFilter[] filters;
 
 
         // 사운드 조절 함수
@@ -2226,77 +2198,53 @@ namespace UEP
             this.trackBars = new TrackBar[10];
             this.labels = new System.Windows.Forms.Label[10];
 
-            // 
-            // trackBarVolume
-            // 
-            this.trackBarVolume.Location = new System.Drawing.Point(12, 12);
+            // 스피커 텍스트 설정
+            System.Windows.Forms.Label lblVolume = new System.Windows.Forms.Label();
+            lblVolume.Text = "스피커 음량";
+            lblVolume.Location = new Point(20, 20);
+            lblVolume.Size = new Size(120, 20);
+
+            this.trackBarVolume.Location = new System.Drawing.Point(100, 20);
             this.trackBarVolume.Name = "trackBarVolume";
-            this.trackBarVolume.Size = new System.Drawing.Size(260, 45);
+            this.trackBarVolume.Size = new System.Drawing.Size(250, 45);
             this.trackBarVolume.TabIndex = 0;
+            this.trackBarVolume.TickStyle = TickStyle.None;
 
-            // 
-            // labelVolume
-            // 
             this.labelVolume.AutoSize = true;
-            this.labelVolume.Location = new System.Drawing.Point(12, 60);
+            this.labelVolume.Location = new System.Drawing.Point(360, 20);
             this.labelVolume.Name = "labelVolume";
-            this.labelVolume.Size = new System.Drawing.Size(49, 13);
+            this.labelVolume.Size = new System.Drawing.Size(60, 30);
             this.labelVolume.TabIndex = 1;
-            this.labelVolume.Text = "Volume: ";
 
-            // 
-            // trackBarMicVolume
-            // 
-            this.trackBarMicVolume.Location = new System.Drawing.Point(12, 90);
+
+
+
+            // 스피커 텍스트 설정
+            System.Windows.Forms.Label lblMicVolume = new System.Windows.Forms.Label();
+            lblMicVolume.Text = "마이크 음량";
+            lblMicVolume.Location = new Point(20, 80);
+            lblMicVolume.Size = new Size(120, 80);
+
+            this.trackBarMicVolume.Location = new System.Drawing.Point(100, 80);
             this.trackBarMicVolume.Name = "trackBarMicVolume";
             this.trackBarMicVolume.Size = new System.Drawing.Size(260, 45);
             this.trackBarMicVolume.TabIndex = 2;
+            this.trackBarMicVolume.TickStyle = TickStyle.None;
 
-            // 
-            // labelMicVolume
-            // 
             this.labelMicVolume.AutoSize = true;
-            this.labelMicVolume.Location = new System.Drawing.Point(12, 140);
+            this.labelMicVolume.Location = new System.Drawing.Point(360, 80);
             this.labelMicVolume.Name = "labelMicVolume";
-            this.labelMicVolume.Size = new System.Drawing.Size(66, 13);
+            this.labelMicVolume.Size = new System.Drawing.Size(60, 30);
             this.labelMicVolume.TabIndex = 3;
-            this.labelMicVolume.Text = "Mic Volume: ";
 
             // 탭 페이지에 컨트롤 추가
+            tabPageAudio.Controls.Add(lblVolume);
+            tabPageAudio.Controls.Add(lblMicVolume);
             tabPageAudio.Controls.Add(this.trackBarVolume);
             tabPageAudio.Controls.Add(this.labelVolume);
             tabPageAudio.Controls.Add(this.trackBarMicVolume);
             tabPageAudio.Controls.Add(this.labelMicVolume);
 
-
-            // 이퀄라이저 트랙바 및 레이블 초기화
-            string[] freqLabels = { "32Hz", "64Hz", "125Hz", "250Hz", "500Hz", "1kHz", "2kHz", "4kHz", "8kHz", "16kHz" };
-            for (int i = 0; i < 10; i++)
-            {
-                this.trackBars[i] = new TrackBar();
-                this.labels[i] = new System.Windows.Forms.Label();
-
-                this.trackBars[i].Location = new System.Drawing.Point(412 + (i + i) * 30, 10);
-                this.trackBars[i].Name = "trackBar" + i;
-                this.trackBars[i].Orientation = Orientation.Vertical;
-                this.trackBars[i].Size = new System.Drawing.Size(45, 150);
-                this.trackBars[i].TabIndex = 4 + i;
-                this.trackBars[i].Minimum = -10;
-                this.trackBars[i].Maximum = 10;
-                this.trackBars[i].Value = 0;
-                //this.trackBars[i].TickFrequency = 1;
-                //this.trackBars[i].ValueChanged += TrackBar_ValueChanged;
-
-                this.labels[i].Location = new System.Drawing.Point(412 + (i + i) * 30, 160);
-                this.labels[i].Name = "label" + i;
-                this.labels[i].Size = new System.Drawing.Size(45, 13);
-                this.labels[i].TabIndex = 14 + i;
-                this.labels[i].Text = freqLabels[i];
-
-                //tabPageAudio.Controls.Add(this.trackBars[i]);
-                //tabPageAudio.Controls.Add(this.labels[i]);
-
-            }
         }
 
         private void InitializeVolumeControl()
@@ -2308,7 +2256,7 @@ namespace UEP
             trackBarVolume.Minimum = 0;
             trackBarVolume.Maximum = 100;
             trackBarVolume.Value = (int)(renderDevice.AudioEndpointVolume.MasterVolumeLevelScalar * 100);
-            labelVolume.Text = $"Volume: {trackBarVolume.Value}%";
+            labelVolume.Text = $"{trackBarVolume.Value}%";
 
             // 트랙바 이벤트 핸들러 연결
             trackBarVolume.Scroll += TrackBarVolume_Scroll;
@@ -2319,7 +2267,7 @@ namespace UEP
             // 볼륨 설정
             float volume = trackBarVolume.Value / 100.0f;
             renderDevice.AudioEndpointVolume.MasterVolumeLevelScalar = volume;
-            labelVolume.Text = $"Volume: {trackBarVolume.Value}%";
+            labelVolume.Text = $"{trackBarVolume.Value}%";
         }
 
         private void InitializeMicVolumeControl()
@@ -2330,7 +2278,7 @@ namespace UEP
             trackBarMicVolume.Minimum = 0;
             trackBarMicVolume.Maximum = 100;
             trackBarMicVolume.Value = (int)(captureDevice.AudioEndpointVolume.MasterVolumeLevelScalar * 100);
-            labelMicVolume.Text = $"Mic Volume: {trackBarMicVolume.Value}%";
+            labelMicVolume.Text = $"{trackBarMicVolume.Value}%";
 
             // 트랙바 이벤트 핸들러 연결
             trackBarMicVolume.Scroll += TrackBarMicVolume_Scroll;
@@ -2341,51 +2289,8 @@ namespace UEP
             // 마이크 볼륨 설정
             float volume = trackBarMicVolume.Value / 100.0f;
             captureDevice.AudioEndpointVolume.MasterVolumeLevelScalar = volume;
-            labelMicVolume.Text = $"Mic Volume: {trackBarMicVolume.Value}%";
+            labelMicVolume.Text = $"{trackBarMicVolume.Value}%";
         }
-
-        private void InitializeEqualizer()
-        {
-            // 이퀄라이저 필터 초기화 (각 주파수 대역별로)
-            filters = new BiQuadFilter[10];
-            float[] frequencies = { 32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 };
-
-            for (int i = 0; i < filters.Length; i++)
-            {
-                filters[i] = BiQuadFilter.PeakingEQ(44100, frequencies[i], 1.0f, 0);
-
-                trackBars[i].Scroll += TrackBar_Scroll;
-                Console.WriteLine(i);
-            }
-
-
-        }
-
-        private void TrackBar_Scroll(object sender, EventArgs e)
-        {
-            int index = Array.IndexOf(trackBars, (TrackBar)sender);
-            Console.WriteLine(index);
-            // 각 트랙바의 값이 변경될 때 마다 해당 인덱스를 사용하여 UpdateEqualizer 호출
-            UpdateEqualizer(index, trackBars[index].Value);
-        }
-
-        private void UpdateEqualizer(int band, int gain)
-        {
-            // 범위 체크
-            if (band < 0 || band >= filters.Length)
-            {
-                // 잘못된 인덱스인 경우 예외 처리
-                Console.WriteLine($"Invalid band index: {band}");
-                return;
-            }
-
-            // Gain 값을 설정하는 대신 이퀄라이저 필터를 재설정합니다
-            float gainFactor = gain / 10.0f;
-            float[] frequencies = { 32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 };
-            filters[band] = BiQuadFilter.PeakingEQ(44100, frequencies[band], 1.0f, gainFactor);
-            Console.WriteLine("band : " + band + "   gain : " + gain + "     바꾸는거 : " + frequencies[band]);
-        }
-
 
         // 사운드 설정들 저장하는 함수
         private void SaveSoundSettings(string filePath, string folderPath)

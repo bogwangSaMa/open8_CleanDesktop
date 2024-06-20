@@ -1,0 +1,3 @@
+trackBarBrightness=50
+sldValue=1000
+currentOrientation=0

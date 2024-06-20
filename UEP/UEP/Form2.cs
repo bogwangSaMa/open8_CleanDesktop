@@ -38,11 +38,13 @@ namespace UEP
 
         public Form2(DataGridViewRow selectedRow)
         {
+
             InitializeComponent();
             InitializeComponents();
             row = selectedRow;
             LoadRowData();
 
+            this.Size = new Size(800, 400);
             this.StartPosition = FormStartPosition.CenterScreen;
         }
 
@@ -150,7 +152,7 @@ namespace UEP
             
 
             btnSave = new Button();
-            btnSave.Location = new Point(450, 380); // 위치 설정
+            btnSave.Location = new Point(650, 300); // 위치 설정
             btnSave.Size = new Size(100, 40); // 크기 설정
             btnSave.Text = "설정값 변경"; // 버튼 텍스트 설정
             btnSave.Click += new EventHandler(btnSave_Click);  
@@ -182,6 +184,7 @@ namespace UEP
         private void LoadRowData()
         {
             sequence.Text = row.Cells[0].Value.ToString();
+            sequence.ReadOnly = true; // appName 텍스트박스를 읽기 전용으로 설정
             appName.Text = row.Cells[2].Value.ToString();
             appName.ReadOnly = true; // appName 텍스트박스를 읽기 전용으로 설정
             processName.Text = row.Cells[3].Value.ToString();
