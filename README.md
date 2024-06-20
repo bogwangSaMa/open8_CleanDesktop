@@ -1,5 +1,5 @@
-[![Video Title](![image](https://github.com/bogwangSaMa/open9_UserExperiencePreset/assets/130433810/4754c8d2-7b89-41f7-bf8b-8c78016f5c56)
-)](https://youtu.be/0foVxNh1xCw?si=5NY9DMKLxlRFBafb)
+[![Video Title](https://img.youtube.com/vi/0foVxNh1xCw/0.jpg)](https://www.youtube.com/watch?v=0foVxNh1xCw)
+
 
 (프로젝트 소개)
 
