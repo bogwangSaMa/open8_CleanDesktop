@@ -1,4 +1,4 @@
-#[UEP프로그램 소개 및 작동 영상 (클릭하면 유튜브로 이동됩니다) ]
+# [UEP프로그램 소개 및 작동 영상 (클릭하면 유튜브로 이동됩니다) ]
 
 [![Video Title](https://img.youtube.com/vi/0foVxNh1xCw/0.jpg)](https://www.youtube.com/watch?v=0foVxNh1xCw)
 
