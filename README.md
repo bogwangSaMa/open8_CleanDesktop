@@ -1,4 +1,4 @@
-https://youtu.be/0foVxNh1xCw?si=5NY9DMKLxlRFBafb
+[![Video Title](https://img.youtube.com/vi/VIDEO_ID/0.jpg)](https://youtu.be/0foVxNh1xCw?si=5NY9DMKLxlRFBafb)
 
 (프로젝트 소개)
 
